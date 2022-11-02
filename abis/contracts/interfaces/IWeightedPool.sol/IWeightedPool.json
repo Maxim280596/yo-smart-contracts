@@ -1,0 +1,4 @@
+[
+  "function getNormalizedWeights() view returns (uint256[])",
+  "function name() view returns (string)"
+]

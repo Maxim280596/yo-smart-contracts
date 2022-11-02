@@ -1,0 +1,3 @@
+[
+  "function canPerform(bytes32,address,address) view returns (bool)"
+]

@@ -1,0 +1,12 @@
+[
+  "event FlashLoanFeePercentageChanged(uint256)",
+  "event SwapFeePercentageChanged(uint256)",
+  "function getAuthorizer() view returns (address)",
+  "function getCollectedFeeAmounts(address[]) view returns (uint256[])",
+  "function getFlashLoanFeePercentage() view returns (uint256)",
+  "function getSwapFeePercentage() view returns (uint256)",
+  "function setFlashLoanFeePercentage(uint256)",
+  "function setSwapFeePercentage(uint256)",
+  "function vault() view returns (address)",
+  "function withdrawCollectedFees(address[],uint256[],address)"
+]
