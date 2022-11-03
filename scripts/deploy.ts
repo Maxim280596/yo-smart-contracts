@@ -9,41 +9,70 @@ import {
   ONE_DAY,
   address,
   nowInSeconds,
-  NETWOR_BUNDLE_ADDRESS,
+  NETWORK_BUNDLE_ADDRESS,
+  NETWORK_POOL_ID,
+  USDC_FTM_POOL_ADDRESS,
+  USDC_FTM_POOL_ID,
+  JUKU_POOL_ID,
+  WFTM_ADDRESS,
 } from "../test/constants";
-const USDT_ADDRESS = "0x4e698B155abdE661E31b0561C1a6654D970Bf256";
-const CBI_ERC20_ADDRESS = "0x46DeD65e49FC12E37cd98a9B83E660F94AAB3791";
-const CRG_ERC20_ADDRESS = "0x93d56Ff2dFA25954696dE21bC01edC6c1F90491f";
-const ROUTER_ADDRESS = "0xa6AD18C2aC47803E193F75c3677b14BF19B94883";
-const ADMIN_ADDRESS = "0x8A45436cFabd59c305b0A129188117D4C3a4E928";
 
 async function main() {
   console.log("Deployment start...");
-  const YO = await ethers.getContractFactory("YieldOptimizer");
-
-  const yo = await YO.deploy(
-    "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-    "0x429848605052D62870D3d9138F0F2F9f58695C0b",
-    "0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce"
+  // const YO = await ethers.getContractFactory("YieldOptimizer");
+  const YO = await ethers.getContractAt(
+    "YieldOptimizer",
+    "0x8aE732E8e2F036AF3c1bBe3E96C20A21a87dFd2B"
   );
 
-  await yo.deployed();
+  // const yo = await YO.deploy(
+  //   "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
+  //   "0x429848605052D62870D3d9138F0F2F9f58695C0b",
+  //   "0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce"
+  // );
+
+  // await yo.deployed();
   const vault = await ethers.getContractAt(vaultAbi, VAULT_ADDRESS);
   const juku7 = await ethers.getContractAt(weightedPoolAbi, JUKU7_POOL_ADDRESS);
-  const poolID = await juku7.getPoolId();
-  await yo.addPool(poolID, "0xDf02adB3CD587DA89aF29E58DE70b840e4949025", [
-    poolID,
-    poolID,
-    poolID,
-    poolID,
-    poolID,
-    poolID,
-    poolID,
-  ]);
-  console.log("YO address: ", yo.address);
+
+  // await yo.addPool(
+  //   JUKU_POOL_ID,
+  //   JUKU7_POOL_ADDRESS,
+  //   "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
+  //   "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
+  //   JUKU_POOL_ID,
+  //   JUKU_POOL_ID,
+  //   [
+  //     JUKU_POOL_ID,
+  //     JUKU_POOL_ID,
+  //     JUKU_POOL_ID,
+  //     JUKU_POOL_ID,
+  //     JUKU_POOL_ID,
+  //     JUKU_POOL_ID,
+  //     JUKU_POOL_ID,
+  //   ],
+  //   0,
+  //   true,
+  //   true
+  // );
+
+  await YO.addPool(
+    NETWORK_POOL_ID,
+    NETWORK_BUNDLE_ADDRESS,
+    WFTM_ADDRESS,
+    WFTM_ADDRESS,
+    USDC_FTM_POOL_ID,
+    USDC_FTM_POOL_ID,
+    [NETWORK_POOL_ID, NETWORK_POOL_ID, NETWORK_POOL_ID, NETWORK_POOL_ID],
+    0,
+    true,
+    true
+  );
+
+  // console.log("YO address: ", yo.address);
 
   try {
-    await verifyContract(yo.address, [
+    await verifyContract("0x8aE732E8e2F036AF3c1bBe3E96C20A21a87dFd2B", [
       "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
       "0x429848605052D62870D3d9138F0F2F9f58695C0b",
       "0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce",

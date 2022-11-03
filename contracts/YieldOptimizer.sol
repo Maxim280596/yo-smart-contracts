@@ -339,11 +339,50 @@ contract YieldOptimizer is Ownable {
         );
     }
 
+    function updateDepositTokenSettings(
+        address poolAddress,
+        address depositTokenAddress,
+        bytes32 newSwapRoute
+    ) external onlyAdmin isAdded(poolAddress) {
+        Pool storage pool = poolInfo[poolAddress];
+        if (depositTokenAddress == address(0)) {
+            revert ZeroAddress("YO: Zero Address");
+        }
+        pool.depositToken = depositTokenAddress;
+        pool.swapRouteForDepositToken = newSwapRoute;
+        emit UpdateSwapRouteForDepositToken(
+            poolAddress,
+            pool.swapRouteForDepositToken
+        );
+    }
+
     function updateSwapRouteForExitToken(
         address poolAddress,
         bytes32 newSwapRoute
     ) external onlyAdmin isAdded(poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
+        pool.swapRouteForExitToken = newSwapRoute;
+        emit UpdateSwapRouteForExitToken(
+            poolAddress,
+            pool.swapRouteForExitToken
+        );
+    }
+
+    function updateExitTokenSettings(
+        address poolAddress,
+        address exitTokenAddress,
+        bytes32 newSwapRoute,
+        uint256 exitIndex
+    ) external onlyAdmin isAdded(poolAddress) {
+        Pool storage pool = poolInfo[poolAddress];
+        if (exitIndex >= pool.tokens.length) {
+            revert InvalidIndex("YO: Invalid index");
+        }
+        if (exitTokenAddress == address(0)) {
+            revert ZeroAddress("YO: Zero Address");
+        }
+        pool.exitToken = exitTokenAddress;
+        pool.exitTokenIndex = exitIndex;
         pool.swapRouteForExitToken = newSwapRoute;
         emit UpdateSwapRouteForExitToken(
             poolAddress,
@@ -414,9 +453,44 @@ contract YieldOptimizer is Ownable {
         return IERC20(usdcToken).balanceOf(address(this));
     }
 
-    function poolIsAdded(address poolAddress) public view returns (bool) {
+    function poolIsAdded(address poolAddress)
+        public
+        view
+        isAdded(poolAddress)
+        returns (bool)
+    {
         Pool storage pool = poolInfo[poolAddress];
         return poolAddress == pool.bptToken;
+    }
+
+    function getPoolSwapRoutes(address poolAddress)
+        public
+        view
+        isAdded(poolAddress)
+        returns (bytes32[] memory)
+    {
+        Pool storage pool = poolInfo[poolAddress];
+        return pool.swapRoutes;
+    }
+
+    function getPoolWeights(address poolAddress)
+        public
+        view
+        isAdded(poolAddress)
+        returns (uint256[] memory)
+    {
+        Pool storage pool = poolInfo[poolAddress];
+        return pool.tokensWeights;
+    }
+
+    function getPoolTokens(address poolAddress)
+        public
+        view
+        isAdded(poolAddress)
+        returns (address[] memory)
+    {
+        Pool storage pool = poolInfo[poolAddress];
+        return pool.tokens;
     }
 
     //======================================================= Internal Functions ========================================================
@@ -438,8 +512,7 @@ contract YieldOptimizer is Ownable {
             revert ZeroAmount("YO: ZeroAmount");
         }
         if (token == address(0)) {
-            require(address(this).balance >= amount, "FTM not enough");
-            if (address(this).balance <= amount) {
+            if (address(this).balance < amount) {
                 revert NotEnoughTokens("YO: Not enough tokens");
             }
             (bool sent, ) = user.call{value: amount}("");
@@ -524,16 +597,6 @@ contract YieldOptimizer is Ownable {
                     1e18;
             }
 
-            // for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
-            //     if (pool.tokens[i] == pool.depositToken) {
-            //         outAmounts[i] = depositTokenAmount;
-            //     } else {
-            //         outAmounts[i] =
-            //             (depositTokenAmount * pool.tokensWeights[i]) /
-            //             1e18;
-            //     }
-            // }
-
             for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
                 if (pool.tokens[i] != pool.depositToken) {
                     giveAmounts[i] = _balancerSwap(
@@ -578,7 +641,7 @@ contract YieldOptimizer is Ownable {
             usdcExitAmount = exitBalance;
         } else {
             usdcExitAmount = _balancerSwap(
-                pool.swapRouteForDepositToken,
+                pool.swapRouteForExitToken,
                 pool.exitToken,
                 usdcToken,
                 exitBalance
@@ -652,7 +715,7 @@ contract YieldOptimizer is Ownable {
     function _calcBalance(
         uint256[] memory balancesBefore,
         uint256[] memory balancesAfter
-    ) public pure returns (uint256[] memory) {
+    ) internal pure returns (uint256[] memory) {
         uint256[] memory balances = new uint256[](balancesBefore.length);
         for (uint256 i; i <= balancesBefore.length - 1; i++) {
             balances[i] = balancesAfter[i] - balancesBefore[i];

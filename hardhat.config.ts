@@ -170,6 +170,7 @@ const config: HardhatUserConfig = {
       url: process.env.FANTOM_MAINNET_URL || "",
       accounts:
         process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+      // gas: 88 * 1.2 * 1e9,
     },
     fuji: {
       url: process.env.AVALANCHE_TESTNET_URL || "",
