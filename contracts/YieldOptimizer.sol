@@ -43,34 +43,41 @@ contract YieldOptimizer is Ownable {
     mapping(address => Pool) public poolInfo; // Info about pool. See Pool struct.
 
     //======================================================= Erorrs ========================================================
-
+    //// @dev - pool not active
     error NotActive(string err);
+    //// @dev - pull has already been added
     error PoolIsAdded(string err);
+    //// @dev - tokens not enough
     error NotEnoughTokens(string err);
+    //// @dev - invalid length of arrays
     error InvalidArrayLengths(string err);
+    //// @dev - address to the zero;
     error ZeroAddress(string err);
+    //// @dev - pool not added to yo;
     error PoolNotAdded(string err);
+    //// @dev - value already assigned
     error AlreadyAssigned(string err);
+    //// @dev - invalid array index
     error InvalidIndex(string err);
+    //// @dev - passed zero amount
     error ZeroAmount(string err);
+    //// @dev - failed sent ether
     error FailedSentEther(string err);
+    //// @dev - access is denied
     error AccessIsDenied(string err);
 
     //======================================================= Events ========================================================
 
+    ////@notice emitted while tokens are withdrawn from the contract
     event Withdraw(
         address indexed token,
         uint256 indexed amount,
         address indexed user,
         string userId
     );
+    ////@notice emitted when the admin is changed
     event UpdateAdmin(address newAdmin);
-    event UpdateAllowedToken(
-        address token,
-        uint256 indexed swapLimit,
-        uint256 indexed withdrawLimit,
-        bool indexed allowed
-    );
+    ////@notice emitted when the funds are invested in the pool
     event Invest(
         bytes32 poolId,
         address indexed pool,
@@ -79,6 +86,7 @@ contract YieldOptimizer is Ownable {
         address user,
         string userId
     );
+    ////@notice emitted when funds are withdrawn from the pool
     event WithdrawFromPool(
         bytes32 poolId,
         address indexed pool,
@@ -87,19 +95,41 @@ contract YieldOptimizer is Ownable {
         address user,
         string userId
     );
+    ////@notice emitted when a new pull is added
     event AddPool(
         address pool,
         bytes32 poolId,
         address[] poolTokens,
         uint256[] poolTokensWeights
     );
+    ////@notice emitted when the pool exit token index is changed
     event UpdatePoolExitTokenIndex(address pool, uint256 exitTokenIndex);
+    ////@notice emitted when the pool deposit type is updated
     event UpdatePoolDepositType(address pool, bool depositType);
+    ////@notice emitted when the pool exit type is updated
     event UpdatePoolExitType(address pool, bool exitType);
+    ////@notice emitted when the pool swap route for deposit token is changed
     event UpdateSwapRouteForDepositToken(address pool, bytes32 newSwapRoute);
+    ////@notice emitted when the pool swap route for exit token is changed
     event UpdateSwapRouteForExitToken(address pool, bytes32 newSwapRoute);
+    ////@notice emitted when the pool swap routes for pool tokens is changed
     event UpdatePoolSwapRoutes(address pool, bytes32[] swapRoutes);
+    ////@notice emitted when the pool deposit token and swap route for deposit token is changed
+    event UpdateDepositTokenSettings(
+        address pool,
+        bytes32 newSwapRoute,
+        address newDepositToken
+    );
+    ////@notice emitted when the pool exit token, exit token index and swap route for exit token is changed
+    event UpdateExitTokenSettings(
+        address pool,
+        bytes32 newSwapRoute,
+        address newExitToken,
+        uint256 exitTokenIndex
+    );
+    ////@notice emitted when the pool turn on
     event TurnOnPool(address pool, bool isActive);
+    ////@notice emitted when the pool turn off
     event TurnOffPool(address pool, bool isActive);
 
     constructor(
@@ -131,6 +161,10 @@ contract YieldOptimizer is Ownable {
 
     //======================================================= Modifiers ========================================================
 
+    /**
+    @dev The modifier checks whether the caller of the method 
+    is an admin or the owner of the contract.
+    */
     modifier onlyAdmin() {
         if (msg.sender != admin && msg.sender != owner()) {
             revert AccessIsDenied("YO: Access is denied");
@@ -138,6 +172,10 @@ contract YieldOptimizer is Ownable {
         _;
     }
 
+    /**
+    @dev The modifier checks if the pull is currently active
+    @param poolAddress pool address.
+    */
     modifier isActive(address poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
         if (!pool.isActive) {
@@ -146,6 +184,10 @@ contract YieldOptimizer is Ownable {
         _;
     }
 
+    /**
+    @dev The modifier checks if the pull has already been added to the YO
+    @param poolAddress pool address.
+    */
     modifier isAdded(address poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
         if (pool.bptToken == address(0)) {
@@ -157,7 +199,7 @@ contract YieldOptimizer is Ownable {
     //======================================================= External Functions ========================================================
 
     /**
-    @dev Reserve external function for withdrawing allowed tokens from the  Treasury.
+    @dev External function for withdrawing tokens from the YO.
     Only the owner or admin can call.
     @param user user wallet address.
     @param amount CBI token amount.
@@ -172,6 +214,14 @@ contract YieldOptimizer is Ownable {
         _withdraw(token, amount, user, userId);
     }
 
+    /**
+    @dev The function invests funds into the pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param amount deposited amount in usdc.
+    @param user user address.
+    @param userId user ID in YO system.
+    */
     function invest(
         address poolAddress,
         uint256 amount,
@@ -204,6 +254,14 @@ contract YieldOptimizer is Ownable {
         );
     }
 
+    /**
+    @dev The function withdraw funds from the pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param amount bpt token amount.
+    @param user user address.
+    @param userId user ID in YO system.
+    */
     function withdrawFromPool(
         address poolAddress,
         uint256 amount,
@@ -228,6 +286,19 @@ contract YieldOptimizer is Ownable {
         );
     }
 
+    /**
+    @dev The function adds and configures a new pool to the YO contract.
+    Only the owner or admin can call.
+    @param _poolId pool id.
+    @param _poolAddress pool contract address
+    @param _depositToken pool deposit token.
+    @param _exitToken pool withdraw token.
+     @param _swapRouteForDepositToken swap route for swap deposit token.
+    @param _swapRouteForExitToken swap route for swap exit token.
+    @param _exitTokenIndex exit token index in tokens array.
+    @param _isDepositInOneToken boolean value if true the deposits makes in one token, if false then in all pool tokens  
+    @param _isExitInOneToken boolean value if true the withdrawals makes in one token, if false then in all pool tokens
+    */
     function addPool(
         bytes32 _poolId,
         address _poolAddress,
@@ -288,6 +359,12 @@ contract YieldOptimizer is Ownable {
         );
     }
 
+    /**
+    @dev The function updates the exit token index for a specific pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param exitIndex exit token index in pool tokens array.
+    */
     function updateExitTokenIndex(address poolAddress, uint256 exitIndex)
         external
         onlyAdmin
@@ -301,6 +378,12 @@ contract YieldOptimizer is Ownable {
         emit UpdatePoolExitTokenIndex(poolAddress, pool.exitTokenIndex);
     }
 
+    /**
+    @dev The function updates the deposit type for a specific pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param depositInOneToken boolean value if true the deposits makes in one token, if false then in all pool tokens  .
+    */
     function updatePoolDepositType(address poolAddress, bool depositInOneToken)
         external
         onlyAdmin
@@ -314,6 +397,12 @@ contract YieldOptimizer is Ownable {
         emit UpdatePoolDepositType(poolAddress, pool.isDepositInOneToken);
     }
 
+    /**
+    @dev The function updates the exit type for a specific pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param exitInOneToken boolean value if true the withdraw makes in one token, if false then in all pool tokens  .
+    */
     function updatePoolExitType(address poolAddress, bool exitInOneToken)
         external
         onlyAdmin
@@ -327,6 +416,12 @@ contract YieldOptimizer is Ownable {
         emit UpdatePoolExitType(poolAddress, pool.isExitInOneToken);
     }
 
+    /**
+    @dev The function updates the swap route for the deposit token for a specific pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param newSwapRoute swap route for usdc to deposit token.
+    */
     function updateSwapRouteForDepositToken(
         address poolAddress,
         bytes32 newSwapRoute
@@ -339,6 +434,13 @@ contract YieldOptimizer is Ownable {
         );
     }
 
+    /**
+    @dev The function updates deposit tokens settings(deposit token address andswap route for deposit token) for a specific pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param depositTokenAddress new deposit token address
+    @param newSwapRoute swap route for usdc to deposit token.
+    */
     function updateDepositTokenSettings(
         address poolAddress,
         address depositTokenAddress,
@@ -350,12 +452,19 @@ contract YieldOptimizer is Ownable {
         }
         pool.depositToken = depositTokenAddress;
         pool.swapRouteForDepositToken = newSwapRoute;
-        emit UpdateSwapRouteForDepositToken(
+        emit UpdateDepositTokenSettings(
             poolAddress,
-            pool.swapRouteForDepositToken
+            newSwapRoute,
+            depositTokenAddress
         );
     }
 
+    /**
+    @dev The function updates the swap route for the exit token. for a specific pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param newSwapRoute swap route for deposit token to usdc token.
+    */
     function updateSwapRouteForExitToken(
         address poolAddress,
         bytes32 newSwapRoute
@@ -368,6 +477,15 @@ contract YieldOptimizer is Ownable {
         );
     }
 
+    /**
+    @dev The function updates exit token settings(exit token address, exit token index 
+    and swap route for exit token) for a specific pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param exitTokenAddress new exit token address
+    @param newSwapRoute swap route for deposit token to usdc.
+    @param exitIndex token index in array of pool tokens.
+    */
     function updateExitTokenSettings(
         address poolAddress,
         address exitTokenAddress,
@@ -384,12 +502,20 @@ contract YieldOptimizer is Ownable {
         pool.exitToken = exitTokenAddress;
         pool.exitTokenIndex = exitIndex;
         pool.swapRouteForExitToken = newSwapRoute;
-        emit UpdateSwapRouteForExitToken(
+        emit UpdateExitTokenSettings(
             poolAddress,
-            pool.swapRouteForExitToken
+            newSwapRoute,
+            exitTokenAddress,
+            exitIndex
         );
     }
 
+    /**
+    @dev The function updates the swap routes for pool tokens for a specific pool.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    @param newSwapRoutes swap routes for pool tokens.
+    */
     function updatePoolSwapRoutes(
         address poolAddress,
         bytes32[] memory newSwapRoutes
@@ -402,6 +528,11 @@ contract YieldOptimizer is Ownable {
         emit UpdatePoolSwapRoutes(poolAddress, pool.swapRoutes);
     }
 
+    /**
+    @dev The function deactivates the pool. The pool will become unavailable for deposits and withdrawals.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    */
     function turnOffPool(address poolAddress)
         external
         onlyAdmin
@@ -415,6 +546,11 @@ contract YieldOptimizer is Ownable {
         emit TurnOffPool(poolAddress, pool.isActive);
     }
 
+    /**
+    @dev The function activates the pool. The pool becomes available for deposits and withdrawals.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    */
     function turnOnPool(address poolAddress)
         external
         onlyAdmin
@@ -453,6 +589,10 @@ contract YieldOptimizer is Ownable {
         return IERC20(usdcToken).balanceOf(address(this));
     }
 
+    /**
+    @dev Public view function returns true if pool is added to YO or false if not added.
+    @param poolAddress pool address.
+    */
     function poolIsAdded(address poolAddress)
         public
         view
@@ -463,6 +603,10 @@ contract YieldOptimizer is Ownable {
         return poolAddress == pool.bptToken;
     }
 
+    /**
+    @dev Public view function returns swap routes for pool tokens.
+    @param poolAddress pool address.
+    */
     function getPoolSwapRoutes(address poolAddress)
         public
         view
@@ -473,6 +617,10 @@ contract YieldOptimizer is Ownable {
         return pool.swapRoutes;
     }
 
+    /**
+    @dev Public view function returns tokens weights in the pool.
+    @param poolAddress pool address.
+    */
     function getPoolWeights(address poolAddress)
         public
         view
@@ -483,6 +631,10 @@ contract YieldOptimizer is Ownable {
         return pool.tokensWeights;
     }
 
+    /**
+    @dev Public view function returns pool tokensl.
+    @param poolAddress pool address.
+    */
     function getPoolTokens(address poolAddress)
         public
         view
@@ -530,6 +682,11 @@ contract YieldOptimizer is Ownable {
         emit Withdraw(token, amount, user, userId);
     }
 
+    /**
+    @dev internal function that performs investment in one token of the pool
+    @param pool see struct Pool.
+    @param amount deposit token amount.
+    */
     function _investInOneToken(Pool memory pool, uint256 amount)
         internal
         returns (uint256[] memory)
@@ -560,6 +717,11 @@ contract YieldOptimizer is Ownable {
         return outAmounts;
     }
 
+    /**
+    @dev internal function that invests in all tokens of the pool according to their weight in the pool.
+    @param pool see struct Pool.
+    @param amount deposit token amount.
+    */
     function _investInAllTokens(Pool memory pool, uint256 amount)
         internal
         returns (uint256[] memory)
@@ -613,6 +775,11 @@ contract YieldOptimizer is Ownable {
         return giveAmounts;
     }
 
+    /**
+    @dev internal function that makes withdraw from pool in one token and swap this token to usdc.
+    @param pool see struct Pool.
+    @param bptAmount beethoven pool token amount.
+    */
     function _withdrawFromPoolInOneToken(Pool memory pool, uint256 bptAmount)
         internal
         returns (uint256)
@@ -650,6 +817,11 @@ contract YieldOptimizer is Ownable {
         return usdcExitAmount;
     }
 
+    /**
+    @dev internal function that makes withdraw from pool in all pool tokens and swap this tokens to usdc.
+    @param pool see struct Pool.
+    @param bptAmount beethoven pool token amount.
+    */
     function _withdrawFromPoolInAllTokens(Pool memory pool, uint256 bptAmount)
         internal
         returns (uint256)
@@ -691,11 +863,11 @@ contract YieldOptimizer is Ownable {
         } else {
             uint256 exitTokenAmount;
             for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
-                if (pool.tokens[i] != pool.depositToken) {
+                if (pool.tokens[i] != pool.exitToken) {
                     exitTokenAmount += _balancerSwap(
                         pool.swapRoutes[i],
                         pool.tokens[i],
-                        pool.depositToken,
+                        pool.exitToken,
                         exitBalances[i]
                     );
                 } else {
@@ -704,7 +876,7 @@ contract YieldOptimizer is Ownable {
             }
             usdcExitAmount = _balancerSwap(
                 pool.swapRouteForDepositToken,
-                pool.depositToken,
+                pool.exitToken,
                 usdcToken,
                 exitTokenAmount
             );
@@ -712,6 +884,11 @@ contract YieldOptimizer is Ownable {
         return usdcExitAmount;
     }
 
+    /**
+    @dev auxiliary function to calculate the balance of tokens on the contract.
+    @param balancesBefore see struct Pool.
+    @param balancesAfter beethoven pool token amount.
+    */
     function _calcBalance(
         uint256[] memory balancesBefore,
         uint256[] memory balancesAfter
@@ -723,6 +900,13 @@ contract YieldOptimizer is Ownable {
         return balances;
     }
 
+    /**
+    @dev The function exits the pool in all tokens. Creates a request and invokes the Beethoven X Vault contract.
+    @param _poolId pool Id.
+    @param _tokens array of pool tokens addresses.
+    @param _amounts array of pool tokens amounts.
+    @param bptAmount beethoven pool token amount
+    */
     function _balancerExitInAllTokens(
         bytes32 _poolId,
         address[] memory _tokens,
@@ -745,6 +929,14 @@ contract YieldOptimizer is Ownable {
         );
     }
 
+    /**
+    @dev The function exits the pool in one token. Creates a request and invokes the Beethoven X Vault contract.
+    @param _poolId pool Id.
+    @param _tokens array of pool tokens addresses.
+    @param _amounts array of pool tokens amounts.
+    @param bptAmount beethoven pool token amount.
+    @param exitTokenIndex exit token index in pool tokens array.
+    */
     function _balancerExitInOneToken(
         bytes32 _poolId,
         address[] memory _tokens,
@@ -768,6 +960,13 @@ contract YieldOptimizer is Ownable {
         );
     }
 
+    /**
+    @dev The function performs a deposit to pool in one or all tokens in the pool.
+    Depending on the number of tokens transferred. Creates a request and invokes the Beethoven X Vault contract.
+    @param _poolId pool Id.
+    @param _tokens array of pool tokens addresses.
+    @param _amounts array of pool tokens amounts.
+    */
     function _balancerJoin(
         bytes32 _poolId,
         address[] memory _tokens,
@@ -785,6 +984,14 @@ contract YieldOptimizer is Ownable {
         IVault(vault).joinPool(_poolId, address(this), address(this), request);
     }
 
+    /**
+    @dev The function performs a swap through Beethoven X pools. 
+    It creates a request and calls the swap method.
+    @param _poolId pool Id.
+    @param _tokenIn token in.
+    @param _tokenOut token out.
+    @param _amountIn tokenIn amount
+    */
     function _balancerSwap(
         bytes32 _poolId,
         address _tokenIn,
@@ -802,6 +1009,11 @@ contract YieldOptimizer is Ownable {
         return IVault(vault).swap(singleSwap, funds, 1, block.timestamp);
     }
 
+    /**
+    @dev The function checks the balances of tokens transferred to it. 
+    And returns an array of balances.
+    @param tokens array of tokens adresses.
+    */
     function _checkBalances(address[] memory tokens)
         internal
         view

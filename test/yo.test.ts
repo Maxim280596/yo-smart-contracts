@@ -85,7 +85,7 @@ describe("Yield Optimizer tests", () => {
       "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
       "0xcdf68a4d525ba2e90fe959c74330430a5a6b8226000200000000000000000008",
       "0xcdf68a4d525ba2e90fe959c74330430a5a6b8226000200000000000000000008",
-      [poolID, poolID, poolID, poolID],
+      [NETWORK_POOL_ID, NETWORK_POOL_ID, NETWORK_POOL_ID, NETWORK_POOL_ID],
       0,
       true,
       true
@@ -115,6 +115,28 @@ describe("Yield Optimizer tests", () => {
     const balance = await usdc.balanceOf(deployer.address);
     await usdc.approve(yo.address, MAX_UINT);
     await usdc.transfer(yo.address, balance);
+
+    await vault.swap(
+      {
+        poolId: NETWORK_POOL_ID,
+        kind: 0,
+        assetIn: address(0),
+        assetOut: "0x40DF1Ae6074C35047BFF66675488Aa2f9f6384F3",
+        amount: ethers.utils.parseUnits("1000.0", 18),
+        userData: "0x",
+      },
+      {
+        sender: deployer.address,
+        fromInternalBalance: false,
+        recipient: deployer.address,
+        toInternalBalance: false,
+      },
+      1,
+      MAX_UINT,
+      {
+        value: ethers.utils.parseUnits("2000.0", 18),
+      }
+    );
   });
 
   describe("", async () => {
