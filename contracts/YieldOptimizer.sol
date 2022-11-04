@@ -36,7 +36,7 @@ contract YieldOptimizer is Ownable {
         bool isExitInOneToken; // if true the withdrawals makes in one token, if false then in all pool tokens
     }
 
-    address public usdcToken; // usdt token
+    address public usdcToken; // USDC token
     address public admin; // contract admin address
     address public vault; // Beethoven X vault address
     uint256 public poolsCounter; // pools counter
@@ -133,7 +133,7 @@ contract YieldOptimizer is Ownable {
     event TurnOffPool(address pool, bool isActive);
 
     constructor(
-        address _usdcToken, // USDT token address
+        address _usdcToken, // USDC token address
         address _admin, // admin address
         address _vault // Beethoven X Vault address
     ) {
@@ -347,7 +347,7 @@ contract YieldOptimizer is Ownable {
         pool.isExitInOneToken = _isExitInOneToken;
 
         IERC20(_poolAddress).approve(vault, type(uint256).max);
-        for (uint256 i; i <= poolTokens.length - 1; i++) {
+        for (uint256 i; i < poolTokens.length; i++) {
             IERC20(poolTokens[i]).approve(vault, type(uint256).max);
         }
         ++poolsCounter;
@@ -583,7 +583,7 @@ contract YieldOptimizer is Ownable {
     //======================================================= Public Functions ========================================================
 
     /**
-    @dev Public view function returns the balance of the USDT token on this contract.
+    @dev Public view function returns the balance of the USDC token on this contract.
     */
     function usdcBalance() public view returns (uint256) {
         return IERC20(usdcToken).balanceOf(address(this));
@@ -693,7 +693,7 @@ contract YieldOptimizer is Ownable {
     {
         uint256[] memory outAmounts = new uint256[](pool.tokens.length);
         if (pool.depositToken == usdcToken) {
-            for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+            for (uint256 i = 0; i < pool.tokens.length; i++) {
                 if (pool.tokens[i] == usdcToken) {
                     outAmounts[i] = amount;
                 } else outAmounts[i] = 0;
@@ -706,7 +706,7 @@ contract YieldOptimizer is Ownable {
                 amount
             );
 
-            for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+            for (uint256 i = 0; i < pool.tokens.length; i++) {
                 if (pool.tokens[i] == pool.depositToken) {
                     outAmounts[i] = depositTokenAmount;
                 } else {
@@ -730,10 +730,10 @@ contract YieldOptimizer is Ownable {
         uint256[] memory giveAmounts = new uint256[](pool.tokens.length);
 
         if (pool.depositToken == usdcToken) {
-            for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+            for (uint256 i = 0; i < pool.tokens.length; i++) {
                 outAmounts[i] = (amount * pool.tokensWeights[i]) / 1e18;
             }
-            for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+            for (uint256 i = 0; i < pool.tokens.length; i++) {
                 if (pool.tokens[i] != usdcToken) {
                     giveAmounts[i] = _balancerSwap(
                         pool.swapRoutes[i],
@@ -753,13 +753,13 @@ contract YieldOptimizer is Ownable {
                 amount
             );
 
-            for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+            for (uint256 i = 0; i < pool.tokens.length; i++) {
                 outAmounts[i] =
                     (depositTokenAmount * pool.tokensWeights[i]) /
                     1e18;
             }
 
-            for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+            for (uint256 i = 0; i < pool.tokens.length; i++) {
                 if (pool.tokens[i] != pool.depositToken) {
                     giveAmounts[i] = _balancerSwap(
                         pool.swapRoutes[i],
@@ -788,7 +788,7 @@ contract YieldOptimizer is Ownable {
         uint256 balanceBefore;
         uint256 balanceAfter;
 
-        for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+        for (uint256 i = 0; i < pool.tokens.length; i++) {
             outAmounts[i] = 0;
         }
         balanceBefore = IERC20(pool.exitToken).balanceOf(address(this));
@@ -830,7 +830,7 @@ contract YieldOptimizer is Ownable {
         uint256[] memory balancesBefore = new uint256[](pool.tokens.length);
         uint256[] memory balancesAfter = new uint256[](pool.tokens.length);
 
-        for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+        for (uint256 i = 0; i < pool.tokens.length; i++) {
             outAmounts[i] = 0;
         }
 
@@ -848,7 +848,7 @@ contract YieldOptimizer is Ownable {
         );
         uint256 usdcExitAmount;
         if (pool.exitToken == usdcToken) {
-            for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+            for (uint256 i = 0; i < pool.tokens.length; i++) {
                 if (pool.tokens[i] != usdcToken) {
                     usdcExitAmount += _balancerSwap(
                         pool.swapRoutes[i],
@@ -862,7 +862,7 @@ contract YieldOptimizer is Ownable {
             }
         } else {
             uint256 exitTokenAmount;
-            for (uint256 i = 0; i <= pool.tokens.length - 1; i++) {
+            for (uint256 i = 0; i < pool.tokens.length; i++) {
                 if (pool.tokens[i] != pool.exitToken) {
                     exitTokenAmount += _balancerSwap(
                         pool.swapRoutes[i],
@@ -894,7 +894,7 @@ contract YieldOptimizer is Ownable {
         uint256[] memory balancesAfter
     ) internal pure returns (uint256[] memory) {
         uint256[] memory balances = new uint256[](balancesBefore.length);
-        for (uint256 i; i <= balancesBefore.length - 1; i++) {
+        for (uint256 i; i < balancesBefore.length; i++) {
             balances[i] = balancesAfter[i] - balancesBefore[i];
         }
         return balances;
@@ -1020,7 +1020,7 @@ contract YieldOptimizer is Ownable {
         returns (uint256[] memory)
     {
         uint256[] memory balances = new uint256[](tokens.length);
-        for (uint256 i; i <= tokens.length - 1; i++) {
+        for (uint256 i; i < tokens.length; i++) {
             balances[i] = IERC20(tokens[i]).balanceOf(address(this));
         }
         return balances;

@@ -70,7 +70,7 @@ const config: HardhatUserConfig = {
         // The Hardhat network will by default fork from the latest mainnet block
         // To pin the block number, specify it below
         // You will need access to a node with archival data for this to work!
-        blockNumber: 49955660,
+        // blockNumber: 49955660,
         // If you want to do some forking, set `enabled` to true
         enabled: true,
       },
