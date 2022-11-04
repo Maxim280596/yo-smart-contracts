@@ -1,62 +1,48 @@
 import { ethers } from "hardhat";
 import { verifyContract } from "./verify";
-import { vaultAbi } from "../test/abis/vaultAbi";
-import { weightedPoolAbi } from "../test/abis/weightedPoolAbi";
 import {
   VAULT_ADDRESS,
   JUKU7_POOL_ADDRESS,
-  MAX_UINT,
-  ONE_DAY,
-  address,
-  nowInSeconds,
   NETWORK_BUNDLE_ADDRESS,
   NETWORK_POOL_ID,
-  USDC_FTM_POOL_ADDRESS,
   USDC_FTM_POOL_ID,
   JUKU_POOL_ID,
   WFTM_ADDRESS,
+  USDC_ADDRESS,
+  ADMIN_ADDRESS,
 } from "../test/constants";
 
 async function main() {
   console.log("Deployment start...");
-  // const YO = await ethers.getContractFactory("YieldOptimizer");
-  const YO = await ethers.getContractAt(
-    "YieldOptimizer",
-    "0x8aE732E8e2F036AF3c1bBe3E96C20A21a87dFd2B"
+  const YO = await ethers.getContractFactory("YieldOptimizer");
+  const yo = await YO.deploy(USDC_ADDRESS, ADMIN_ADDRESS, VAULT_ADDRESS);
+
+  await yo.deployed();
+  console.log(`YO deployed to address:`, yo.address);
+  console.log("start adding JUKU7...");
+  await yo.addPool(
+    JUKU_POOL_ID,
+    JUKU7_POOL_ADDRESS,
+    USDC_ADDRESS,
+    USDC_ADDRESS,
+    JUKU_POOL_ID,
+    JUKU_POOL_ID,
+    [
+      JUKU_POOL_ID,
+      JUKU_POOL_ID,
+      JUKU_POOL_ID,
+      JUKU_POOL_ID,
+      JUKU_POOL_ID,
+      JUKU_POOL_ID,
+      JUKU_POOL_ID,
+    ],
+    0,
+    true,
+    true
   );
-
-  // const yo = await YO.deploy(
-  //   "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-  //   "0x429848605052D62870D3d9138F0F2F9f58695C0b",
-  //   "0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce"
-  // );
-
-  // await yo.deployed();
-  const vault = await ethers.getContractAt(vaultAbi, VAULT_ADDRESS);
-  const juku7 = await ethers.getContractAt(weightedPoolAbi, JUKU7_POOL_ADDRESS);
-
-  // await yo.addPool(
-  //   JUKU_POOL_ID,
-  //   JUKU7_POOL_ADDRESS,
-  //   "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-  //   "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-  //   JUKU_POOL_ID,
-  //   JUKU_POOL_ID,
-  //   [
-  //     JUKU_POOL_ID,
-  //     JUKU_POOL_ID,
-  //     JUKU_POOL_ID,
-  //     JUKU_POOL_ID,
-  //     JUKU_POOL_ID,
-  //     JUKU_POOL_ID,
-  //     JUKU_POOL_ID,
-  //   ],
-  //   0,
-  //   true,
-  //   true
-  // );
-
-  await YO.addPool(
+  console.log("JUKU7 is added to YO!");
+  console.log("start adding Network Bundle...");
+  await yo.addPool(
     NETWORK_POOL_ID,
     NETWORK_BUNDLE_ADDRESS,
     WFTM_ADDRESS,
@@ -68,14 +54,13 @@ async function main() {
     true,
     true
   );
-
-  // console.log("YO address: ", yo.address);
+  console.log("Network bundle is added to YO!");
 
   try {
-    await verifyContract("0x8aE732E8e2F036AF3c1bBe3E96C20A21a87dFd2B", [
-      "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-      "0x429848605052D62870D3d9138F0F2F9f58695C0b",
-      "0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce",
+    await verifyContract(yo.address, [
+      USDC_ADDRESS,
+      ADMIN_ADDRESS,
+      VAULT_ADDRESS,
     ]);
   } catch (err) {
     console.log("TokenSale verify", err);

@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { ethers, waffle } from "hardhat";
-// import { BigNumberish } from "ethers";
 import { vaultAbi } from "./abis/vaultAbi";
 import { weightedPoolAbi } from "./abis/weightedPoolAbi";
 import { erc20Abi } from "./abis/erc20Abi";
@@ -24,16 +23,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { YieldOptimizer } from "../typechain-types";
 
 const provider = waffle.provider;
-
-// function encodeJoinExitMockPool(
-//   amountsIn: BigNumberish[],
-//   minimumBPT: BigNumberish
-// ): string {
-//   return ethers.utils.defaultAbiCoder.encode(
-//     ["uint256", "uint256[]", "uint256"],
-//     [1, amountsIn, minimumBPT]
-//   );
-// }
 
 describe("Yield Optimizer tests", () => {
   let vault: any;
@@ -386,7 +375,6 @@ describe("Yield Optimizer tests", () => {
             11
           )
         ).to.be.revertedWith("YO: Invalid index");
-        // });
       });
       it("should update deposit token settings", async () => {
         await yieldOptimizer.updateDepositTokenSettings(
@@ -641,7 +629,12 @@ describe("Yield Optimizer tests", () => {
       });
       it("should withdraw in usdc token", async () => {
         const balanceBPT = await latePool.balanceOf(yo.address);
-        yo.withdrawFromPool(LATE_ADDRESS, balanceBPT, deployer.address, "user");
+        await yo.withdrawFromPool(
+          LATE_ADDRESS,
+          balanceBPT,
+          deployer.address,
+          "user"
+        );
         const balanceBPTAfter = await latePool.balanceOf(yo.address);
         expect(balanceBPTAfter).to.be.equal(ethers.utils.parseEther("0"));
       });
@@ -706,206 +699,164 @@ describe("Yield Optimizer tests", () => {
         ).to.be.revertedWith("YO: Not enough tokens");
       });
     });
-    describe("sale tests", async () => {
-      it("get pool id", async () => {
-        //   console.log(await yo.poolsCounter());
-        //   const a = await yo.poolInfo(JUKU7_POOL_ADDRESS);
-        //   console.log(await juku7.getPoolId());
-        //   const poolID = await juku7.getPoolId();
-        //   const poolTOkens = await vault.getPoolTokens(poolID);
-        //   // console.log(poolTOkens);
-        //   const joinPool = await vault.joinPool(
-        //     poolID,
-        //     deployer.address,
-        //     deployer.address,
-        //     {
-        //       assets: [
-        //         "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-        //         "0x1E4F97b9f9F913c46F1632781732927B9019C68b",
-        //         "0x0000000000000000000000000000000000000000",
-        //         "0x321162Cd933E2Be498Cd2267a90534A804051b11",
-        //         "0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B",
-        //         "0x74b23882a30290451A17c44f4F05243b6b58C76d",
-        //         "0xb3654dc3D10Ea7645f8319668E8F54d2574FBdC8",
-        //       ],
-        //       maxAmountsIn: [
-        //         "0",
-        //         "0",
-        //         "10000000000000000000",
-        //         "0",
-        //         "0",
-        //         "0",
-        //         "0",
-        //       ],
-        //       fromInternalBalance: false,
-        //       userData: encodeJoinExitMockPool(
-        //         ["0", "0", "10000000000000000000", "0", "0", "0", "0"],
-        //         0
-        //       ),
-        //     },
-        //     {
-        //       value: ethers.utils.parseUnits("10.0", 18),
-        //     }
-        //   );
-        // });
-        // it("should make batch swap", async () => {
-        //   const poolID = await juku7.getPoolId();
-        //   const poolTOkens = await vault.getPoolTokens(poolID);
-        //   const sw = await vault.swap(
-        //     {
-        //       poolId: poolID,
-        //       kind: 0,
-        //       assetIn: address(0),
-        //       assetOut: "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-        //       amount: ethers.utils.parseUnits("1000.0", 18),
-        //       userData: "0x",
-        //     },
-        //     {
-        //       sender: deployer.address,
-        //       fromInternalBalance: false,
-        //       recipient: deployer.address,
-        //       toInternalBalance: false,
-        //     },
-        //     1,
-        //     MAX_UINT,
-        //     {
-        //       value: ethers.utils.parseUnits("1000.0", 18),
-        //     }
-        //   );
-        //   const balance = await usdc.balanceOf(deployer.address);
-        //   await usdc.approve(yo.address, MAX_UINT);
-        //   await usdc.transfer(yo.address, balance.div(2));
-        //   await yo.invest(
-        //     JUKU7_POOL_ADDRESS,
-        //     ethers.utils.parseUnits("10.0", 6),
-        //     deployer.address,
-        //     "rrrrr"
-        //   );
-        //   console.log("investtttttttttt");
-        //   const tx = await yo.invest(
-        //     NETWORK_BUNDLE_ADDRESS,
-        //     ethers.utils.parseUnits("10.0", 6),
-        //     deployer.address,
-        //     "rrrrr"
-        //   );
-        //   const data: any = await tx.wait();
-        //   const event1 = data.events?.filter((x: any) => {
-        //     return x.event == "Invest";
-        //   });
-        // console.log(
-        //   ethers.utils.parseBytes32String(
-        //     "0xb41a49b10ff01988d3a8327b2e05a0a0f3bbfa2bc0d5dc8b1d8f4878d1018837"
-        //   )
-        // );
-        // const balanceBPT = await juku7.balanceOf(yo.address);
-        // const balanceBPTn = await networkBundle.balanceOf(yo.address);
-        // // console.log(balanceBPT);
-        // const balancesBefore = await yo.checkBalances([
-        //   "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-        //   "0x1E4F97b9f9F913c46F1632781732927B9019C68b",
-        //   "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
-        //   "0x321162Cd933E2Be498Cd2267a90534A804051b11",
-        //   "0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B",
-        //   "0x74b23882a30290451A17c44f4F05243b6b58C76d",
-        //   "0xb3654dc3D10Ea7645f8319668E8F54d2574FBdC8",
-        // ]);
-        // console.log(balancesBefore, "balances");
-        // await yo.withdrawFromPool(
-        //   JUKU7_POOL_ADDRESS,
-        //   balanceBPT,
-        //   deployer.address,
-        //   "rrrrr"
-        // );
-        // await yo.withdrawFromPool(
-        //   NETWORK_BUNDLE_ADDRESS,
-        //   balanceBPTn,
-        //   deployer.address,
-        //   "rrrrr"
-        // );
-        // const balance2 = await usdc.balanceOf(yo.address);
-        // const balanceBPT2 = await juku7.balanceOf(yo.address);
-        // console.log(balance2);
-        // console.log(balanceBPT2);
-        // const bptTotal = await juku7.totalSupply();
-        // console.log(bptTotal);
-        // const balances = await yo.checkBalances([
-        //   "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-        //   "0x1E4F97b9f9F913c46F1632781732927B9019C68b",
-        //   "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
-        //   "0x321162Cd933E2Be498Cd2267a90534A804051b11",
-        //   "0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B",
-        //   "0x74b23882a30290451A17c44f4F05243b6b58C76d",
-        //   "0xb3654dc3D10Ea7645f8319668E8F54d2574FBdC8",
-        // ]);
-        // console.log(balances, "balances");
-        // const exitBalances = await yo._calcBalance(balancesBefore, balances);
-        // console.log(exitBalances, "exit");
-        // console.log(await usdc.balanceOf(yo.address));
-        // const poolIDs = await networkBundle.getPoolId();
-        // const poolTOkenss = await vault.getPoolTokens(poolIDs);
-        // console.log(poolTOkenss);
-        // await yo.addPool(
-        //   "0xdf02adb3cd587da89af29e58de70b840e49490250001000000000000000005b8",
-        //   JUKU7_POOL_ADDRESS,
-        //   [poolID, poolID, poolID, poolID, poolID, poolID, poolID]
-        // );
-        // 0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-        //       "0x1E4F97b9f9F913c46F1632781732927B9019C68b",
-        //       "0x0000000000000000000000000000000000000000",
-        //       "0x321162Cd933E2Be498Cd2267a90534A804051b11",
-        //       "0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B",
-        //       "0x74b23882a30290451A17c44f4F05243b6b58C76d",
-        //       "0xb3654dc3D10Ea7645f8319668E8F54d2574FBdC8",
-        // const token1 = await ethers.getContractAt()
-        // const tokens = [
-        //   "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-        //   "0x1E4F97b9f9F913c46F1632781732927B9019C68b",
-        //   "0x321162Cd933E2Be498Cd2267a90534A804051b11",
-        //   //   "0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B",
-        //   //   "0x74b23882a30290451A17c44f4F05243b6b58C76d",
-        //   //   "0xb3654dc3D10Ea7645f8319668E8F54d2574FBdC8",
-        // ];
-        // const limits = Array(tokens.length).fill(MAX_UINT);
-        // await usdc.approve(vault.address, MAX_UINT);
-        // const networkPoolId = await networkBundle.getPoolId();
-        // const networkTokens = await vault.getPoolTokens(networkPoolId);
-        // console.log(networkTokens);
-        // const query = await vault.batchSwap(
-        //   0,
-        //   [
-        //     {
-        //       poolId: poolID,
-        //       assetInIndex: 0,
-        //       assetOutIndex: 2,
-        //       amount: ethers.utils.parseUnits("2", 6),
-        //       userData: "0x",
-        //     },
-        //     {
-        //       poolId: networkPoolId,
-        //       assetInIndex: 2,
-        //       assetOutIndex: 1,
-        //       amount: 0,
-        //       userData: "0x",
-        //     },
-        //   ],
-        //   [
-        //     "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75".toLowerCase(),
-        //     "0x40DF1Ae6074C35047BFF66675488Aa2f9f6384F3".toLowerCase(),
-        //     "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83".toLowerCase(),
-        //   ],
-        //   {
-        //     sender: deployer.address,
-        //     recipient: deployer.address,
-        //     fromInternalBalance: false,
-        //     toInternalBalance: false,
-        //   },
-        //   [
-        //     ethers.utils.parseUnits("10.0", 6),
-        //     ethers.utils.parseUnits("10.0", 18),
-        //     ethers.utils.parseUnits("10.0", 18),
-        //   ],
-        //   MAX_UINT
-        // );
+    describe("events tests", async () => {
+      let yieldOptimizerEvents: YieldOptimizer;
+
+      before(async () => {
+        const YO = await ethers.getContractFactory("YieldOptimizer");
+        yieldOptimizerEvents = await YO.deploy(
+          usdc.address,
+          deployer.address,
+          vault.address
+        );
+      });
+      it("should emit event invest", async () => {
+        await expect(
+          yo.invest(
+            LATE_ADDRESS,
+            ethers.utils.parseUnits("10.0", 6),
+            deployer.address,
+            "user"
+          )
+        ).to.emit(yo, "Invest");
+      });
+      it("should emit event withdrawFromPool", async () => {
+        const balanceBPT = await latePool.balanceOf(yo.address);
+        await expect(
+          yo.withdrawFromPool(
+            LATE_ADDRESS,
+            balanceBPT,
+            deployer.address,
+            "user"
+          )
+        ).to.emit(yo, "WithdrawFromPool");
+      });
+      it("should emit event withdraw", async () => {
+        await expect(
+          yo.withdraw(
+            usdc.address,
+            ethers.utils.parseUnits("10", 6),
+            accounts[2].address,
+            "user"
+          )
+        )
+          .to.emit(yo, "Withdraw")
+          .withArgs(
+            usdc.address,
+            ethers.utils.parseUnits("10", 6),
+            accounts[2].address,
+            "user"
+          );
+      });
+      it("should emit addPool event", async () => {
+        await expect(
+          yieldOptimizerEvents.addPool(
+            LATE_POOL_ID,
+            LATE_ADDRESS,
+            usdc.address,
+            usdc.address,
+            LATE_POOL_ID,
+            LATE_POOL_ID,
+            [LATE_POOL_ID, LATE_POOL_ID, LATE_POOL_ID, LATE_POOL_ID],
+            0,
+            true,
+            true
+          )
+        ).to.emit(yieldOptimizerEvents, "AddPool");
+      });
+      it("should emit UpdatePoolExitTokenIndex event", async () => {
+        await expect(yieldOptimizerEvents.updateExitTokenIndex(LATE_ADDRESS, 1))
+          .to.emit(yieldOptimizerEvents, "UpdatePoolExitTokenIndex")
+          .withArgs(LATE_ADDRESS, 1);
+      });
+      it("should emit UpdatePoolDepositType event", async () => {
+        await expect(
+          yieldOptimizerEvents.updatePoolDepositType(LATE_ADDRESS, false)
+        )
+          .to.emit(yieldOptimizerEvents, "UpdatePoolDepositType")
+          .withArgs(LATE_ADDRESS, false);
+      });
+      it("should emit UpdatePoolExitType event", async () => {
+        await expect(
+          yieldOptimizerEvents.updatePoolExitType(LATE_ADDRESS, false)
+        )
+          .to.emit(yieldOptimizerEvents, "UpdatePoolExitType")
+          .withArgs(LATE_ADDRESS, false);
+      });
+      it("should emit UpdateSwapRouteForDepositToken event", async () => {
+        await expect(
+          yieldOptimizerEvents.updateSwapRouteForDepositToken(
+            LATE_ADDRESS,
+            LATE_POOL_ID
+          )
+        )
+          .to.emit(yieldOptimizerEvents, "UpdateSwapRouteForDepositToken")
+          .withArgs(LATE_ADDRESS, LATE_POOL_ID);
+      });
+      it("should emit UpdateSwapRouteForExitToken event", async () => {
+        await expect(
+          yieldOptimizerEvents.updateSwapRouteForExitToken(
+            LATE_ADDRESS,
+            LATE_POOL_ID
+          )
+        )
+          .to.emit(yieldOptimizerEvents, "UpdateSwapRouteForExitToken")
+          .withArgs(LATE_ADDRESS, LATE_POOL_ID);
+      });
+      it("should emit UpdatePoolSwapRoutes event", async () => {
+        await expect(
+          yieldOptimizerEvents.updatePoolSwapRoutes(LATE_ADDRESS, [
+            LATE_POOL_ID,
+            LATE_POOL_ID,
+            LATE_POOL_ID,
+            LATE_POOL_ID,
+          ])
+        )
+          .to.emit(yieldOptimizerEvents, "UpdatePoolSwapRoutes")
+          .withArgs(LATE_ADDRESS, [
+            LATE_POOL_ID,
+            LATE_POOL_ID,
+            LATE_POOL_ID,
+            LATE_POOL_ID,
+          ]);
+      });
+      it("should emit UpdateDepositTokenSettings event", async () => {
+        await expect(
+          yieldOptimizerEvents.updateDepositTokenSettings(
+            LATE_ADDRESS,
+            WFTM_ADDRESS,
+            USDC_FTM_POOL_ID
+          )
+        )
+          .to.emit(yieldOptimizerEvents, "UpdateDepositTokenSettings")
+          .withArgs(LATE_ADDRESS, USDC_FTM_POOL_ID, WFTM_ADDRESS);
+      });
+      it("should emit UpdateExitTokenSettings event", async () => {
+        await expect(
+          yieldOptimizerEvents.updateExitTokenSettings(
+            LATE_ADDRESS,
+            WFTM_ADDRESS,
+            USDC_FTM_POOL_ID,
+            0
+          )
+        )
+          .to.emit(yieldOptimizerEvents, "UpdateExitTokenSettings")
+          .withArgs(LATE_ADDRESS, USDC_FTM_POOL_ID, WFTM_ADDRESS, 0);
+      });
+      it("should emit TurnOffPool event", async () => {
+        await expect(yieldOptimizerEvents.turnOffPool(LATE_ADDRESS))
+          .to.emit(yieldOptimizerEvents, "TurnOffPool")
+          .withArgs(LATE_ADDRESS, false);
+      });
+      it("should emit TurnOnPool event", async () => {
+        await expect(yieldOptimizerEvents.turnOnPool(LATE_ADDRESS))
+          .to.emit(yieldOptimizerEvents, "TurnOnPool")
+          .withArgs(LATE_ADDRESS, true);
+      });
+      it("should emit UpdateAdmin event", async () => {
+        await expect(yieldOptimizerEvents.updateAdmin(accounts[8].address))
+          .to.emit(yieldOptimizerEvents, "UpdateAdmin")
+          .withArgs(accounts[8].address);
       });
     });
   });
