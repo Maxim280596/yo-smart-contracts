@@ -1,0 +1,13 @@
+[
+  "event OwnershipTransferred(address indexed,address indexed)",
+  "event WhitelistedAddressAdded(address)",
+  "event WhitelistedAddressRemoved(address)",
+  "function addAddressToWhitelist(address) returns (bool)",
+  "function addAddressesToWhitelist(address[]) returns (bool)",
+  "function owner() view returns (address)",
+  "function removeAddressFromWhitelist(address) returns (bool)",
+  "function removeAddressesFromWhitelist(address[]) returns (bool)",
+  "function renounceOwnership()",
+  "function transferOwnership(address)",
+  "function whitelist(address) view returns (bool)"
+]

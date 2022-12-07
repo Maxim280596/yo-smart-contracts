@@ -3,13 +3,13 @@
 pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "./interfaces/IVault.sol";
 import "./interfaces/IWeightedPool.sol";
+import "./lib/Errors.sol";
 
 contract YieldOptimizer is Ownable {
     using SafeERC20 for IERC20;
@@ -18,6 +18,13 @@ contract YieldOptimizer is Ownable {
     IUniswapV2Router public swapRouter;
     IVault.FundManagement public funds;
     IVault.SwapKind public swapKind;
+
+    struct Allocations {
+        uint256 reinvestedPercent;
+        uint256 rewardsPercent;
+        uint256 treasuryPercent;
+        uint256 commisionsPercent;
+    }
 
     struct Pool {
         address bptToken; // pool address
@@ -30,41 +37,37 @@ contract YieldOptimizer is Ownable {
         bytes32[] swapRoutes; // Array of pool id`s for the swap deposit or exit tokens to pool tokens
         uint256[] tokensWeights; // tokens weights in pool
         uint256 exitTokenIndex; // exit token index in the pool tokens array
+        uint256 currentEpoch;
         string poolName; // pool name
         bool isActive; // If true the pull works, if false then not
         bool isDepositInOneToken; // if true the deposits makes in one token, if false then in all pool tokens
         bool isExitInOneToken; // if true the withdrawals makes in one token, if false then in all pool tokens
+        bool isDefaultAllocations;
+        Allocations allocations;
     }
 
+    struct Epoch {
+        uint256 commisions;
+        uint256 jukuRewards;
+        uint256 reinvestedBpt;
+        uint256 treasuryRevenue;
+        uint256 start;
+        uint256 end;
+    }
+
+    uint256 public immutable PRECISSION = 10000;
     address public usdcToken; // USDC token
+    address public jukuToken; // Juku token address
     address public admin; // contract admin address
     address public vault; // Beethoven X vault address
-    uint256 public poolsCounter; // pools counter
+    address[] public pathToJuku; // SwapRoute to Juku token
+    uint256 public reinvestedDefault;
+    uint256 public rewardsDefault;
+    uint256 public treasuryDefault;
+    uint256 public commisionsDefault;
     mapping(address => Pool) public poolInfo; // Info about pool. See Pool struct.
-
-    //======================================================= Erorrs ========================================================
-    //// @dev - pool not active
-    error NotActive(string err);
-    //// @dev - pull has already been added
-    error PoolIsAdded(string err);
-    //// @dev - tokens not enough
-    error NotEnoughTokens(string err);
-    //// @dev - invalid length of arrays
-    error InvalidArrayLengths(string err);
-    //// @dev - address to the zero;
-    error ZeroAddress(string err);
-    //// @dev - pool not added to yo;
-    error PoolNotAdded(string err);
-    //// @dev - value already assigned
-    error AlreadyAssigned(string err);
-    //// @dev - invalid array index
-    error InvalidIndex(string err);
-    //// @dev - passed zero amount
-    error ZeroAmount(string err);
-    //// @dev - failed sent ether
-    error FailedSentEther(string err);
-    //// @dev - access is denied
-    error AccessIsDenied(string err);
+    mapping(address => mapping(uint256 => Epoch)) public poolRewards;
+    mapping(address => uint256) public rewardsEpochCounter;
 
     //======================================================= Events ========================================================
 
@@ -95,6 +98,15 @@ contract YieldOptimizer is Ownable {
         address user,
         string userId
     );
+    event Harvest(
+        address pool,
+        bytes32 poolId,
+        uint256 reinvestBptAmount,
+        uint256 commisionsUsdcAmount,
+        uint256 treasuryUsdcAmount,
+        uint256 rewardsJukuAmount,
+        uint256 timestamp
+    );
     ////@notice emitted when a new pull is added
     event AddPool(
         address pool,
@@ -108,10 +120,6 @@ contract YieldOptimizer is Ownable {
     event UpdatePoolDepositType(address pool, bool depositType);
     ////@notice emitted when the pool exit type is updated
     event UpdatePoolExitType(address pool, bool exitType);
-    ////@notice emitted when the pool swap route for deposit token is changed
-    event UpdateSwapRouteForDepositToken(address pool, bytes32 newSwapRoute);
-    ////@notice emitted when the pool swap route for exit token is changed
-    event UpdateSwapRouteForExitToken(address pool, bytes32 newSwapRoute);
     ////@notice emitted when the pool swap routes for pool tokens is changed
     event UpdatePoolSwapRoutes(address pool, bytes32[] swapRoutes);
     ////@notice emitted when the pool deposit token and swap route for deposit token is changed
@@ -127,26 +135,62 @@ contract YieldOptimizer is Ownable {
         address newExitToken,
         uint256 exitTokenIndex
     );
+    event UpdateAllocation(
+        address pool,
+        uint256 reinvest,
+        uint256 commisions,
+        uint256 rewards,
+        uint256 treasury
+    );
+    event UpdateDefaultAllocation(
+        uint256 reinvest,
+        uint256 commisions,
+        uint256 rewards,
+        uint256 treasury
+    );
+    event UpdateSwapRouter(address newSwapRouter);
+    event UpdatePathToJuku(address[] newPath);
     ////@notice emitted when the pool turn on
     event TurnOnPool(address pool, bool isActive);
     ////@notice emitted when the pool turn off
     event TurnOffPool(address pool, bool isActive);
+    event UpdatePoolAllocationType(address pool, bool isDefault);
 
     constructor(
         address _usdcToken, // USDC token address
+        address _jukuToken, // Juku token address
         address _admin, // admin address
-        address _vault // Beethoven X Vault address
+        address _vault, // Beethoven X Vault address
+        address _uniRouter, // spookySwap router
+        uint256 _reinvestedPercent,
+        uint256 _rewardsPercent,
+        uint256 _treasuryPercent,
+        uint256 _commisionsPercent
     ) {
-        if (
-            _vault == address(0) ||
-            _admin == address(0) ||
-            _usdcToken == address(0)
-        ) {
-            revert ZeroAddress("YO: Zero Address");
-        }
+        _require(
+            _vault != address(0) &&
+                _admin != address(0) &&
+                _usdcToken != address(0) &&
+                _jukuToken != address(0) &&
+                _uniRouter != address(0),
+            Errors.ZERO_ADDRESS
+        );
+        _require(
+            _commisionsPercent + _rewardsPercent + _treasuryPercent ==
+                PRECISSION,
+            Errors.INVALID_PERCENT
+        );
+        _require(_reinvestedPercent <= PRECISSION, Errors.PERCENT_ERROR);
         vault = _vault;
         usdcToken = _usdcToken;
+        jukuToken = _jukuToken;
+        swapRouter = IUniswapV2Router(_uniRouter);
         admin = _admin;
+        pathToJuku = [_usdcToken, _jukuToken];
+        reinvestedDefault = _reinvestedPercent;
+        treasuryDefault = _treasuryPercent;
+        commisionsDefault = _commisionsPercent;
+        rewardsDefault = _rewardsPercent;
         funds = IVault.FundManagement(
             address(this),
             false,
@@ -155,6 +199,8 @@ contract YieldOptimizer is Ownable {
         );
         swapKind = IVault.SwapKind.GIVEN_IN;
         IERC20(_usdcToken).approve(_vault, type(uint256).max);
+        IERC20(_usdcToken).approve(_uniRouter, type(uint256).max);
+        IERC20(_jukuToken).approve(_uniRouter, type(uint256).max);
     }
 
     receive() external payable {}
@@ -166,33 +212,30 @@ contract YieldOptimizer is Ownable {
     is an admin or the owner of the contract.
     */
     modifier onlyAdmin() {
-        if (msg.sender != admin && msg.sender != owner()) {
-            revert AccessIsDenied("YO: Access is denied");
-        }
+        _require(
+            msg.sender == admin || msg.sender == owner(),
+            Errors.ACCESS_IS_DENIED
+        );
         _;
     }
 
     /**
-    @dev The modifier checks if the pull is currently active
+    @dev The modifier checks if the pool is currently active
     @param poolAddress pool address.
     */
     modifier isActive(address poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
-        if (!pool.isActive) {
-            revert NotActive("YO: Pool not active");
-        }
+        _require(pool.isActive, Errors.NOT_ACTIVE);
         _;
     }
 
     /**
-    @dev The modifier checks if the pull has already been added to the YO
+    @dev The modifier checks if the pool has already been added to the YO
     @param poolAddress pool address.
     */
     modifier isAdded(address poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
-        if (pool.bptToken == address(0)) {
-            revert PoolNotAdded("YO: Pool not added");
-        }
+        _require(pool.bptToken != address(0), Errors.POOL_NOT_ADDED);
         _;
     }
 
@@ -228,9 +271,10 @@ contract YieldOptimizer is Ownable {
         address user,
         string memory userId
     ) external onlyAdmin isActive(poolAddress) {
-        if (IERC20(usdcToken).balanceOf(address(this)) < amount) {
-            revert NotEnoughTokens("YO: Not enough usdc");
-        }
+        _require(
+            IERC20(usdcToken).balanceOf(address(this)) >= amount,
+            Errors.NOT_ENOUGH_TOKENS
+        );
         Pool storage pool = poolInfo[poolAddress];
 
         uint256[] memory giveAmounts = pool.isDepositInOneToken
@@ -269,9 +313,10 @@ contract YieldOptimizer is Ownable {
         string memory userId
     ) external onlyAdmin isActive(poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
-        if (IERC20(pool.bptToken).balanceOf(address(this)) < amount) {
-            revert NotEnoughTokens("YO: Not enough BPT");
-        }
+        _require(
+            IERC20(pool.bptToken).balanceOf(address(this)) >= amount,
+            Errors.NOT_ENOUGH_TOKENS
+        );
         uint256 usdcExitAmount = pool.isExitInOneToken
             ? _withdrawFromPoolInOneToken(pool, amount)
             : _withdrawFromPoolInAllTokens(pool, amount);
@@ -312,24 +357,21 @@ contract YieldOptimizer is Ownable {
         bool _isExitInOneToken
     ) external onlyAdmin {
         Pool storage pool = poolInfo[_poolAddress];
-        if (pool.bptToken != address(0)) {
-            revert PoolIsAdded("YO: Pool already added");
-        }
+        _require(pool.bptToken == address(0), Errors.POOL_IS_ADDED);
 
         (address[] memory poolTokens, , ) = IVault(vault).getPoolTokens(
             _poolId
         );
-
-        if (_swapRoutes.length != poolTokens.length) {
-            revert InvalidArrayLengths("YO: Invalid array lengths");
-        }
-        if (
-            _depositToken == address(0) ||
-            _poolAddress == address(0) ||
-            _exitToken == address(0)
-        ) {
-            revert ZeroAddress("YO: Zero Address");
-        }
+        _require(
+            _swapRoutes.length == poolTokens.length,
+            Errors.INVALID_ARRAY_LENGHTS
+        );
+        _require(
+            _depositToken != address(0) &&
+                _poolAddress != address(0) &&
+                _exitToken != address(0),
+            Errors.ZERO_ADDRESS
+        );
 
         pool.tokens = poolTokens;
         pool.poolId = _poolId;
@@ -345,18 +387,200 @@ contract YieldOptimizer is Ownable {
         pool.exitTokenIndex = _exitTokenIndex;
         pool.isDepositInOneToken = _isDepositInOneToken;
         pool.isExitInOneToken = _isExitInOneToken;
+        pool.isDefaultAllocations = true;
 
+        Epoch storage epoch = poolRewards[_poolAddress][
+            rewardsEpochCounter[_poolAddress]
+        ];
+        epoch.start = block.timestamp;
+        pool.currentEpoch = rewardsEpochCounter[_poolAddress];
         IERC20(_poolAddress).approve(vault, type(uint256).max);
         for (uint256 i; i < poolTokens.length; i++) {
             IERC20(poolTokens[i]).approve(vault, type(uint256).max);
         }
-        ++poolsCounter;
         emit AddPool(
             pool.bptToken,
             pool.poolId,
             pool.tokens,
             pool.tokensWeights
         );
+    }
+
+    /**
+    @dev The function collects the swap fee from a certain pool and distributes it according to the specified allocation. 
+    The number of bpt tokens that will be burned is calculated on the backend.
+    Only the owner or admin can call.
+    @param poolAddress pool contract address
+    @param amount bpt tokens amount
+    */
+    function harvest(address poolAddress, uint256 amount)
+        external
+        onlyAdmin
+        isActive(poolAddress)
+    {
+        Pool storage pool = poolInfo[poolAddress];
+        _require(
+            IERC20(pool.bptToken).balanceOf(address(this)) >= amount,
+            Errors.NOT_ENOUGH_TOKENS
+        );
+        _require(amount > 0, Errors.ZERO_AMOUNT);
+        (uint256 reinvest, uint256 totalWithdrawAmount) = _calcHarvestAmount(
+            poolAddress,
+            amount
+        );
+
+        uint256 usdcExitAmount = pool.isExitInOneToken
+            ? _withdrawFromPoolInOneToken(pool, totalWithdrawAmount)
+            : _withdrawFromPoolInAllTokens(pool, totalWithdrawAmount);
+
+        (uint256 commisions, uint256 rewards, uint256 treasury) = _allocate(
+            poolAddress,
+            usdcExitAmount
+        );
+
+        uint256[] memory amounts = swapRouter.swapExactTokensForTokens(
+            rewards,
+            0,
+            pathToJuku,
+            address(this),
+            block.timestamp
+        );
+
+        Epoch storage epoch = poolRewards[poolAddress][pool.currentEpoch];
+        epoch.commisions = commisions;
+        epoch.jukuRewards = amounts[1];
+        epoch.treasuryRevenue = treasury;
+        epoch.reinvestedBpt = reinvest;
+        epoch.end = block.timestamp;
+
+        ++rewardsEpochCounter[poolAddress];
+        pool.currentEpoch = rewardsEpochCounter[poolAddress];
+        Epoch storage newEpoch = poolRewards[poolAddress][pool.currentEpoch];
+        newEpoch.start = block.timestamp;
+
+        emit Harvest(
+            poolAddress,
+            pool.poolId,
+            reinvest,
+            commisions,
+            treasury,
+            amounts[1],
+            block.timestamp
+        );
+    }
+
+    function updatePoolAllocationPercents(
+        address poolAddress,
+        uint256 reinvest,
+        uint256 commisions,
+        uint256 rewards,
+        uint256 treasury
+    ) external onlyAdmin isAdded(poolAddress) {
+        _require(
+            commisions + rewards + treasury == PRECISSION,
+            Errors.INVALID_PERCENT
+        );
+        _require(reinvest <= PRECISSION, Errors.PERCENT_ERROR);
+        Pool storage pool = poolInfo[poolAddress];
+        pool.allocations.reinvestedPercent = reinvest;
+        pool.allocations.commisionsPercent = commisions;
+        pool.allocations.rewardsPercent = rewards;
+        pool.allocations.treasuryPercent = treasury;
+        pool.isDefaultAllocations = false;
+        emit UpdateAllocation(
+            poolAddress,
+            reinvest,
+            commisions,
+            rewards,
+            treasury
+        );
+    }
+
+    function updateDefaultAllocationPercents(
+        uint256 reinvest,
+        uint256 commisions,
+        uint256 rewards,
+        uint256 treasury
+    ) external onlyAdmin {
+        _require(
+            commisions + rewards + treasury == PRECISSION,
+            Errors.INVALID_PERCENT
+        );
+        _require(reinvest <= PRECISSION, Errors.PERCENT_ERROR);
+        reinvestedDefault = reinvest;
+        commisionsDefault = commisions;
+        rewardsDefault = rewards;
+        treasuryDefault = treasury;
+        emit UpdateDefaultAllocation(reinvest, commisions, rewards, treasury);
+    }
+
+    function changePoolAllocationType(address poolAddress, bool isDefault)
+        external
+        onlyAdmin
+        isAdded(poolAddress)
+    {
+        Pool storage pool = poolInfo[poolAddress];
+        _require(
+            isDefault != pool.isDefaultAllocations,
+            Errors.ALREADY_ASSIGNED
+        );
+        pool.isDefaultAllocations = isDefault;
+        emit UpdatePoolAllocationType(poolAddress, isDefault);
+    }
+
+    function updateSwapRouter(address newSwapRouter) external onlyAdmin {
+        _require(newSwapRouter != address(0), Errors.ZERO_ADDRESS);
+        swapRouter = IUniswapV2Router(newSwapRouter);
+        emit UpdateSwapRouter(newSwapRouter);
+    }
+
+    function updatePathToJuku(address[] memory newPath) external onlyAdmin {
+        pathToJuku = newPath;
+        emit UpdatePathToJuku(newPath);
+    }
+
+    function _calcHarvestAmount(address poolAddress, uint256 amount)
+        internal
+        view
+        returns (uint256 reinvest, uint256 totalWithdrawAmount)
+    {
+        Pool storage pool = poolInfo[poolAddress];
+        if (!pool.isDefaultAllocations) {
+            reinvest =
+                (amount * pool.allocations.reinvestedPercent) /
+                PRECISSION;
+            totalWithdrawAmount = amount - reinvest;
+        } else {
+            reinvest = (amount * reinvestedDefault) / PRECISSION;
+            totalWithdrawAmount = amount - reinvest;
+        }
+    }
+
+    function _allocate(address poolAddress, uint256 usdcAmount)
+        internal
+        view
+        returns (
+            uint256 commisions,
+            uint256 rewards,
+            uint256 treasury
+        )
+    {
+        Pool storage pool = poolInfo[poolAddress];
+        if (!pool.isDefaultAllocations) {
+            commisions =
+                (usdcAmount * pool.allocations.commisionsPercent) /
+                PRECISSION;
+            rewards =
+                (usdcAmount * pool.allocations.rewardsPercent) /
+                PRECISSION;
+            treasury =
+                (usdcAmount * pool.allocations.treasuryPercent) /
+                PRECISSION;
+        } else {
+            commisions = (usdcAmount * commisionsDefault) / PRECISSION;
+            rewards = (usdcAmount * rewardsDefault) / PRECISSION;
+            treasury = (usdcAmount * treasuryDefault) / PRECISSION;
+        }
     }
 
     /**
@@ -371,9 +595,7 @@ contract YieldOptimizer is Ownable {
         isAdded(poolAddress)
     {
         Pool storage pool = poolInfo[poolAddress];
-        if (exitIndex >= pool.tokens.length) {
-            revert InvalidIndex("YO: Invalid index");
-        }
+        _require(exitIndex < pool.tokens.length, Errors.INVALID_INDEX);
         pool.exitTokenIndex = exitIndex;
         emit UpdatePoolExitTokenIndex(poolAddress, pool.exitTokenIndex);
     }
@@ -390,9 +612,10 @@ contract YieldOptimizer is Ownable {
         isAdded(poolAddress)
     {
         Pool storage pool = poolInfo[poolAddress];
-        if (pool.isDepositInOneToken == depositInOneToken) {
-            revert AlreadyAssigned("YO: Value is already assigned");
-        }
+        _require(
+            pool.isDepositInOneToken != depositInOneToken,
+            Errors.ALREADY_ASSIGNED
+        );
         pool.isDepositInOneToken = depositInOneToken;
         emit UpdatePoolDepositType(poolAddress, pool.isDepositInOneToken);
     }
@@ -409,29 +632,12 @@ contract YieldOptimizer is Ownable {
         isAdded(poolAddress)
     {
         Pool storage pool = poolInfo[poolAddress];
-        if (pool.isExitInOneToken == exitInOneToken) {
-            revert AlreadyAssigned("YO: Value is already assigned");
-        }
+        _require(
+            pool.isExitInOneToken != exitInOneToken,
+            Errors.ALREADY_ASSIGNED
+        );
         pool.isExitInOneToken = exitInOneToken;
         emit UpdatePoolExitType(poolAddress, pool.isExitInOneToken);
-    }
-
-    /**
-    @dev The function updates the swap route for the deposit token for a specific pool.
-    Only the owner or admin can call.
-    @param poolAddress pool address.
-    @param newSwapRoute swap route for usdc to deposit token.
-    */
-    function updateSwapRouteForDepositToken(
-        address poolAddress,
-        bytes32 newSwapRoute
-    ) external onlyAdmin isAdded(poolAddress) {
-        Pool storage pool = poolInfo[poolAddress];
-        pool.swapRouteForDepositToken = newSwapRoute;
-        emit UpdateSwapRouteForDepositToken(
-            poolAddress,
-            pool.swapRouteForDepositToken
-        );
     }
 
     /**
@@ -447,33 +653,13 @@ contract YieldOptimizer is Ownable {
         bytes32 newSwapRoute
     ) external onlyAdmin isAdded(poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
-        if (depositTokenAddress == address(0)) {
-            revert ZeroAddress("YO: Zero Address");
-        }
+        _require(depositTokenAddress != address(0), Errors.ZERO_ADDRESS);
         pool.depositToken = depositTokenAddress;
         pool.swapRouteForDepositToken = newSwapRoute;
         emit UpdateDepositTokenSettings(
             poolAddress,
             newSwapRoute,
             depositTokenAddress
-        );
-    }
-
-    /**
-    @dev The function updates the swap route for the exit token. for a specific pool.
-    Only the owner or admin can call.
-    @param poolAddress pool address.
-    @param newSwapRoute swap route for deposit token to usdc token.
-    */
-    function updateSwapRouteForExitToken(
-        address poolAddress,
-        bytes32 newSwapRoute
-    ) external onlyAdmin isAdded(poolAddress) {
-        Pool storage pool = poolInfo[poolAddress];
-        pool.swapRouteForExitToken = newSwapRoute;
-        emit UpdateSwapRouteForExitToken(
-            poolAddress,
-            pool.swapRouteForExitToken
         );
     }
 
@@ -493,12 +679,8 @@ contract YieldOptimizer is Ownable {
         uint256 exitIndex
     ) external onlyAdmin isAdded(poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
-        if (exitIndex >= pool.tokens.length) {
-            revert InvalidIndex("YO: Invalid index");
-        }
-        if (exitTokenAddress == address(0)) {
-            revert ZeroAddress("YO: Zero Address");
-        }
+        _require(exitIndex < pool.tokens.length, Errors.INVALID_INDEX);
+        _require(exitTokenAddress != address(0), Errors.ZERO_ADDRESS);
         pool.exitToken = exitTokenAddress;
         pool.exitTokenIndex = exitIndex;
         pool.swapRouteForExitToken = newSwapRoute;
@@ -521,9 +703,10 @@ contract YieldOptimizer is Ownable {
         bytes32[] memory newSwapRoutes
     ) external onlyAdmin isAdded(poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
-        if (newSwapRoutes.length != pool.tokens.length) {
-            revert InvalidArrayLengths("YO: Invalid array lengths");
-        }
+        _require(
+            newSwapRoutes.length == pool.tokens.length,
+            Errors.INVALID_ARRAY_LENGHTS
+        );
         pool.swapRoutes = newSwapRoutes;
         emit UpdatePoolSwapRoutes(poolAddress, pool.swapRoutes);
     }
@@ -539,9 +722,7 @@ contract YieldOptimizer is Ownable {
         isAdded(poolAddress)
     {
         Pool storage pool = poolInfo[poolAddress];
-        if (pool.isActive == false) {
-            revert AlreadyAssigned("YO: Value is already assigned");
-        }
+        _require(pool.isActive != false, Errors.ALREADY_ASSIGNED);
         pool.isActive = false;
         emit TurnOffPool(poolAddress, pool.isActive);
     }
@@ -557,9 +738,7 @@ contract YieldOptimizer is Ownable {
         isAdded(poolAddress)
     {
         Pool storage pool = poolInfo[poolAddress];
-        if (pool.isActive == true) {
-            revert AlreadyAssigned("YO: Value is already assigned");
-        }
+        _require(pool.isActive != true, Errors.ALREADY_ASSIGNED);
         pool.isActive = true;
         emit TurnOnPool(poolAddress, pool.isActive);
     }
@@ -570,12 +749,8 @@ contract YieldOptimizer is Ownable {
     @param newAdmin new admin wallet address.
     */
     function updateAdmin(address newAdmin) external onlyOwner {
-        if (newAdmin == address(0)) {
-            revert ZeroAddress("YO: Zero Address");
-        }
-        if (newAdmin == admin) {
-            revert AlreadyAssigned("Value already assigned");
-        }
+        _require(newAdmin != address(0), Errors.ZERO_ADDRESS);
+        _require(newAdmin != admin, Errors.ALREADY_ASSIGNED);
         admin = newAdmin;
         emit UpdateAdmin(newAdmin);
     }
@@ -660,22 +835,14 @@ contract YieldOptimizer is Ownable {
         address user,
         string memory userId
     ) internal {
-        if (amount == 0) {
-            revert ZeroAmount("YO: ZeroAmount");
-        }
+        _require(amount > 0, Errors.ZERO_AMOUNT);
         if (token == address(0)) {
-            if (address(this).balance < amount) {
-                revert NotEnoughTokens("YO: Not enough tokens");
-            }
+            _require(address(this).balance >= amount, Errors.NOT_ENOUGH_TOKENS);
             (bool sent, ) = user.call{value: amount}("");
-            if (!sent) {
-                revert FailedSentEther("Failed to send Ether");
-            }
+            _require(sent, Errors.FAILED_SENT_ETHER);
         } else {
             uint256 balanceToken = IERC20(token).balanceOf(address(this));
-            if (balanceToken < amount) {
-                revert NotEnoughTokens("YO: Not enough tokens");
-            }
+            _require(balanceToken >= amount, Errors.NOT_ENOUGH_TOKENS);
             IERC20(token).safeTransfer(user, amount);
         }
 

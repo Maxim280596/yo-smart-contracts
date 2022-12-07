@@ -3,6 +3,7 @@ import { ethers, waffle } from "hardhat";
 import { vaultAbi } from "./abis/vaultAbi";
 import { weightedPoolAbi } from "./abis/weightedPoolAbi";
 import { erc20Abi } from "./abis/erc20Abi";
+import { router } from "./abis/router";
 import {
   VAULT_ADDRESS,
   JUKU7_POOL_ADDRESS,
@@ -18,9 +19,11 @@ import {
   USDC_FTM_POOL_ID,
   LATE_ADDRESS,
   LATE_POOL_ID,
+  SWAP_ROUTER,
 } from "./constants";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { YieldOptimizer } from "../typechain-types";
+import { BigNumber } from "ethers";
 
 const provider = waffle.provider;
 
@@ -34,6 +37,8 @@ describe("Yield Optimizer tests", () => {
   let batlePool: any;
   let networkBundle: any;
   let latePool: any;
+  let jukuToken: any;
+  let spookyRouter: any;
 
   before("Init test environment", async () => {
     vault = await ethers.getContractAt(vaultAbi, VAULT_ADDRESS);
@@ -48,12 +53,32 @@ describe("Yield Optimizer tests", () => {
       erc20Abi,
       "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75"
     );
+
     const [ownerAccount, ...others] = await ethers.getSigners();
     accounts = others;
     deployer = ownerAccount;
     const YO = await ethers.getContractFactory("YieldOptimizer");
+    const JUKU = await ethers.getContractFactory("JUKU_ERC20");
+
+    spookyRouter = await ethers.getContractAt(router, SWAP_ROUTER);
+    jukuToken = await JUKU.deploy(
+      ethers.utils.parseUnits("100000000.0", 18),
+      0,
+      deployer.address,
+      []
+    );
     const poolID = await juku7.getPoolId();
-    yo = await YO.deploy(usdc.address, deployer.address, vault.address);
+    yo = await YO.deploy(
+      usdc.address,
+      jukuToken.address,
+      deployer.address,
+      vault.address,
+      spookyRouter.address,
+      2000,
+      3750,
+      2500,
+      3750
+    );
     await yo.addPool(
       "0xdf02adb3cd587da89af29e58de70b840e49490250001000000000000000005b8",
       JUKU7_POOL_ADDRESS,
@@ -86,7 +111,7 @@ describe("Yield Optimizer tests", () => {
         kind: 0,
         assetIn: address(0),
         assetOut: "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-        amount: ethers.utils.parseUnits("1000.0", 18),
+        amount: ethers.utils.parseUnits("1500.0", 18),
         userData: "0x",
       },
       {
@@ -102,30 +127,60 @@ describe("Yield Optimizer tests", () => {
       }
     );
     const balance = await usdc.balanceOf(deployer.address);
+
     await usdc.approve(yo.address, MAX_UINT);
     await usdc.transfer(yo.address, balance);
 
-    await vault.swap(
+    for (let i = 9; i < 18; i++) {
+      await accounts[i].sendTransaction({
+        to: accounts[8].address,
+        value: ethers.utils.parseEther("9000"),
+      });
+    }
+
+    await vault.connect(accounts[8]).swap(
       {
-        poolId: NETWORK_POOL_ID,
+        poolId: poolID,
         kind: 0,
         assetIn: address(0),
-        assetOut: "0x40DF1Ae6074C35047BFF66675488Aa2f9f6384F3",
-        amount: ethers.utils.parseUnits("1000.0", 18),
+        assetOut: "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
+        amount: ethers.utils.parseUnits("20000.0", 18),
         userData: "0x",
       },
       {
-        sender: deployer.address,
+        sender: accounts[8].address,
         fromInternalBalance: false,
-        recipient: deployer.address,
+        recipient: accounts[8].address,
         toInternalBalance: false,
       },
       1,
       MAX_UINT,
       {
-        value: ethers.utils.parseUnits("2000.0", 18),
+        value: ethers.utils.parseUnits("25000.0", 18),
       }
     );
+
+    const usdcBalanceLiquidity = await usdc.balanceOf(accounts[8].address);
+    await usdc
+      .connect(accounts[8])
+      .transfer(deployer.address, usdcBalanceLiquidity);
+
+    await usdc.approve(spookyRouter.address, MAX_UINT);
+    await jukuToken.approve(spookyRouter.address, MAX_UINT);
+
+    await spookyRouter.addLiquidity(
+      usdc.address,
+      jukuToken.address,
+      ethers.utils.parseUnits("2000.0", 6),
+      ethers.utils.parseUnits("20000.0", 18),
+      0,
+      0,
+      deployer.address,
+      MAX_UINT
+    );
+
+    const balanceAfterLiquidity = await usdc.balanceOf(deployer.address);
+    await usdc.transfer(yo.address, balanceAfterLiquidity);
   });
 
   describe("", async () => {
@@ -134,16 +189,65 @@ describe("Yield Optimizer tests", () => {
         const YO = await ethers.getContractFactory("YieldOptimizer");
         const yieldOptimizer = await YO.deploy(
           usdc.address,
+          jukuToken.address,
           deployer.address,
-          vault.address
+          vault.address,
+          spookyRouter.address,
+          2000,
+          3750,
+          2500,
+          3750
         );
         await expect(vault.address).to.equal(await yieldOptimizer.vault());
       });
       it("should revert deploy if passed zero address", async () => {
         const YO = await ethers.getContractFactory("YieldOptimizer");
         await expect(
-          YO.deploy(usdc.address, deployer.address, address(0))
-        ).to.be.revertedWith("YO: Zero Address");
+          YO.deploy(
+            usdc.address,
+            jukuToken.address,
+            deployer.address,
+            address(0),
+            spookyRouter.address,
+            2000,
+            3750,
+            2500,
+            3750
+          )
+        ).to.be.revertedWith("YO#001");
+      });
+
+      it("should revert deploy if invalid percent", async () => {
+        const YO = await ethers.getContractFactory("YieldOptimizer");
+        await expect(
+          YO.deploy(
+            usdc.address,
+            jukuToken.address,
+            deployer.address,
+            vault.address,
+            spookyRouter.address,
+            20000,
+            3750,
+            2500,
+            3750
+          )
+        ).to.be.revertedWith("YO#012");
+      });
+      it("should revert deploy if invalid allocation percent", async () => {
+        const YO = await ethers.getContractFactory("YieldOptimizer");
+        await expect(
+          YO.deploy(
+            usdc.address,
+            jukuToken.address,
+            deployer.address,
+            vault.address,
+            spookyRouter.address,
+            2000,
+            33750,
+            2500,
+            3750
+          )
+        ).to.be.revertedWith("YO#011");
       });
     });
     describe("add & update pool tests", async () => {
@@ -153,8 +257,14 @@ describe("Yield Optimizer tests", () => {
         const YO = await ethers.getContractFactory("YieldOptimizer");
         yieldOptimizer = await YO.deploy(
           usdc.address,
+          jukuToken.address,
           deployer.address,
-          vault.address
+          vault.address,
+          spookyRouter.address,
+          2000,
+          3750,
+          2500,
+          3750
         );
       });
       it("should revert add pool if unequal array length", async () => {
@@ -178,7 +288,7 @@ describe("Yield Optimizer tests", () => {
             true,
             true
           )
-        ).to.be.revertedWith("YO: Invalid array lengths");
+        ).to.be.revertedWith("YO#005");
       });
       it("should revert add pool if passed zero address", async () => {
         await expect(
@@ -202,7 +312,7 @@ describe("Yield Optimizer tests", () => {
             true,
             true
           )
-        ).to.be.revertedWith("YO: Zero Address");
+        ).to.be.revertedWith("YO#001");
       });
       it("should add pool", async () => {
         await yieldOptimizer.addPool(
@@ -253,7 +363,7 @@ describe("Yield Optimizer tests", () => {
             true,
             true
           )
-        ).to.be.revertedWith("YO: Pool already added");
+        ).to.be.revertedWith("YO#004");
       });
       it("should update exit token index for pool", async () => {
         await yieldOptimizer.updateExitTokenIndex(JUKU7_POOL_ADDRESS, 2);
@@ -263,17 +373,89 @@ describe("Yield Optimizer tests", () => {
       it("should revert update exit token if invalid index", async () => {
         await expect(
           yieldOptimizer.updateExitTokenIndex(JUKU7_POOL_ADDRESS, 12)
-        ).to.be.revertedWith("YO: Invalid index");
+        ).to.be.revertedWith("YO#008");
       });
       it("should update pool deposit type", async () => {
         await yieldOptimizer.updatePoolDepositType(JUKU7_POOL_ADDRESS, false);
         const poolInfo = await yieldOptimizer.poolInfo(JUKU7_POOL_ADDRESS);
         expect(poolInfo.isDepositInOneToken).to.be.equal(false);
       });
+      it("should update pool allocations percents", async () => {
+        const newCommisions = 1000;
+        const newRewards = 2000;
+        const newTreasury = 7000;
+        const reinvest = 1000;
+        await yieldOptimizer.updatePoolAllocationPercents(
+          JUKU7_POOL_ADDRESS,
+          reinvest,
+          newCommisions,
+          newRewards,
+          newTreasury
+        );
+        const alloc = await yieldOptimizer.poolInfo(JUKU7_POOL_ADDRESS);
+
+        expect(alloc.allocations.reinvestedPercent).to.be.equal(reinvest);
+        expect(alloc.allocations.rewardsPercent).to.be.equal(newRewards);
+        expect(alloc.allocations.treasuryPercent).to.be.equal(newTreasury);
+        expect(alloc.allocations.commisionsPercent).to.be.equal(newCommisions);
+      });
+      it("should update default allocations percents", async () => {
+        const newCommisions = 1000;
+        const newRewards = 2000;
+        const newTreasury = 7000;
+        const reinvest = 1000;
+        await yieldOptimizer.updateDefaultAllocationPercents(
+          reinvest,
+          newCommisions,
+          newRewards,
+          newTreasury
+        );
+        const commisions = await yieldOptimizer.commisionsDefault();
+        const treasury = await yieldOptimizer.treasuryDefault();
+        const rewards = await yieldOptimizer.rewardsDefault();
+        const reinvested = await yieldOptimizer.reinvestedDefault();
+        expect(commisions).to.be.equal(newCommisions);
+        expect(rewards).to.be.equal(newRewards);
+        expect(treasury).to.be.equal(newTreasury);
+        expect(reinvested).to.be.equal(reinvest);
+      });
+      it("should revert update allocations if invalid total percent", async () => {
+        const newCommisions = 1000;
+        const newRewards = 2000;
+        const newTreasury = 8000;
+        const reinvest = 1000;
+        await expect(
+          yieldOptimizer.updateDefaultAllocationPercents(
+            reinvest,
+            newCommisions,
+            newRewards,
+            newTreasury
+          )
+        ).to.be.revertedWith("YO#011");
+      });
+
+      it("should update swapRouter", async () => {
+        await yieldOptimizer.updateSwapRouter(VAULT_ADDRESS);
+        const sw = await yieldOptimizer.swapRouter();
+        expect(sw).to.be.equal(VAULT_ADDRESS);
+      });
+      it("should revert update swap router if passed zero address", async () => {
+        await expect(
+          yieldOptimizer.updateSwapRouter(address(0))
+        ).to.be.revertedWith("YO#001");
+      });
+      it("should update path to juku", async () => {
+        const newPath = [jukuToken.address, usdc.address];
+        await yieldOptimizer.updatePathToJuku(newPath);
+        const token1 = await yieldOptimizer.pathToJuku(0);
+        const token2 = await yieldOptimizer.pathToJuku(1);
+        expect(newPath[0]).to.be.equal(token1);
+        expect(newPath[1]).to.be.equal(token2);
+      });
       it("should revert update pool deposit type if type already assigned", async () => {
         await expect(
           yieldOptimizer.updatePoolDepositType(JUKU7_POOL_ADDRESS, false)
-        ).to.be.revertedWith("YO: Value is already assigned");
+        ).to.be.revertedWith("YO#007");
       });
       it("should update pool exit type", async () => {
         await yieldOptimizer.updatePoolExitType(JUKU7_POOL_ADDRESS, false);
@@ -283,23 +465,7 @@ describe("Yield Optimizer tests", () => {
       it("should revert update pool exit type if type already assigned", async () => {
         await expect(
           yieldOptimizer.updatePoolExitType(JUKU7_POOL_ADDRESS, false)
-        ).to.be.revertedWith("YO: Value is already assigned");
-      });
-      it("should update swap route for deposit token", async () => {
-        await yieldOptimizer.updateSwapRouteForDepositToken(
-          JUKU7_POOL_ADDRESS,
-          NETWORK_POOL_ID
-        );
-        const poolInfo = await yieldOptimizer.poolInfo(JUKU7_POOL_ADDRESS);
-        expect(poolInfo.swapRouteForDepositToken).to.be.equal(NETWORK_POOL_ID);
-      });
-      it("should update swap route for exit token", async () => {
-        await yieldOptimizer.updateSwapRouteForExitToken(
-          JUKU7_POOL_ADDRESS,
-          NETWORK_POOL_ID
-        );
-        const poolInfo = await yieldOptimizer.poolInfo(JUKU7_POOL_ADDRESS);
-        expect(poolInfo.swapRouteForExitToken).to.be.equal(NETWORK_POOL_ID);
+        ).to.be.revertedWith("YO#007");
       });
       it("should turn off pool", async () => {
         await yieldOptimizer.turnOffPool(JUKU7_POOL_ADDRESS);
@@ -309,7 +475,7 @@ describe("Yield Optimizer tests", () => {
       it("should revert turn off is already off", async () => {
         await expect(
           yieldOptimizer.turnOffPool(JUKU7_POOL_ADDRESS)
-        ).to.be.revertedWith("YO: Value is already assigned");
+        ).to.be.revertedWith("YO#007");
       });
       it("should turn on pool", async () => {
         await yieldOptimizer.turnOnPool(JUKU7_POOL_ADDRESS);
@@ -319,7 +485,7 @@ describe("Yield Optimizer tests", () => {
       it("should revert turn on is already on", async () => {
         await expect(
           yieldOptimizer.turnOnPool(JUKU7_POOL_ADDRESS)
-        ).to.be.revertedWith("YO: Value is already assigned");
+        ).to.be.revertedWith("YO#007");
       });
       it("should update admin", async () => {
         await yieldOptimizer.updateAdmin(accounts[1].address);
@@ -329,20 +495,20 @@ describe("Yield Optimizer tests", () => {
       });
       it("should revert update admin if passed zero address", async () => {
         await expect(yieldOptimizer.updateAdmin(address(0))).to.be.revertedWith(
-          "YO: Zero Address"
+          "YO#001"
         );
       });
       it("should revert update admin if already added", async () => {
         await expect(
           yieldOptimizer.updateAdmin(accounts[1].address)
-        ).to.be.revertedWith("Value already assigned");
+        ).to.be.revertedWith("YO#007");
       });
       it("should revert update if pool not added", async () => {
         await expect(
           yieldOptimizer
             .connect(deployer)
             .updateExitTokenIndex(USDC_FTM_POOL_ADDRESS, 0)
-        ).to.be.revertedWith("YO: Pool not added");
+        ).to.be.revertedWith("YO#006");
       });
       it("should update exit token settings", async () => {
         await yieldOptimizer.updateExitTokenSettings(
@@ -364,7 +530,7 @@ describe("Yield Optimizer tests", () => {
             USDC_FTM_POOL_ID,
             1
           )
-        ).to.be.revertedWith("YO: Zero Address");
+        ).to.be.revertedWith("YO#001");
       });
       it("should revert update exit token settings id passed invalid index", async () => {
         await expect(
@@ -374,7 +540,7 @@ describe("Yield Optimizer tests", () => {
             USDC_FTM_POOL_ID,
             11
           )
-        ).to.be.revertedWith("YO: Invalid index");
+        ).to.be.revertedWith("YO#008");
       });
       it("should update deposit token settings", async () => {
         await yieldOptimizer.updateDepositTokenSettings(
@@ -393,7 +559,7 @@ describe("Yield Optimizer tests", () => {
             address(0),
             USDC_FTM_POOL_ID
           )
-        ).to.be.revertedWith("YO: Zero Address");
+        ).to.be.revertedWith("YO#001");
       });
       it("should update pool swap routes", async () => {
         const routes: string[] = [
@@ -424,7 +590,7 @@ describe("Yield Optimizer tests", () => {
         ];
         await expect(
           yieldOptimizer.updatePoolSwapRoutes(JUKU7_POOL_ADDRESS, routes)
-        ).to.be.revertedWith("YO: Invalid array lengths");
+        ).to.be.revertedWith("YO#005");
       });
     });
     describe("test view methods", async () => {
@@ -524,7 +690,7 @@ describe("Yield Optimizer tests", () => {
             deployer.address,
             "user"
           )
-        ).to.be.revertedWith("YO: Not enough BPT");
+        ).to.be.revertedWith("YO#002");
       });
       it("should revert invest in pool if not enough funds", async () => {
         await expect(
@@ -534,7 +700,7 @@ describe("Yield Optimizer tests", () => {
             deployer.address,
             "user"
           )
-        ).to.be.revertedWith("YO: Not enough usdc");
+        ).to.be.revertedWith("YO#002");
       });
       it("should revert invest if caller not owner or admin", async () => {
         await expect(
@@ -546,7 +712,7 @@ describe("Yield Optimizer tests", () => {
               deployer.address,
               "user"
             )
-        ).to.be.revertedWith("YO: Access is denied");
+        ).to.be.revertedWith("YO#010");
       });
       it("should revert invest if pool not active or not added", async () => {
         await expect(
@@ -556,7 +722,7 @@ describe("Yield Optimizer tests", () => {
             deployer.address,
             "user"
           )
-        ).to.be.revertedWith("YO: Pool not active");
+        ).to.be.revertedWith("YO#003");
       });
       it("should deposit in pool in all tokens", async () => {
         const balanceUsdcBefore = await usdc.balanceOf(yo.address);
@@ -651,7 +817,7 @@ describe("Yield Optimizer tests", () => {
       it("should revert withdraw usdc if zero amount", async () => {
         await expect(
           yo.withdraw(usdc.address, 0, accounts[2].address, "user")
-        ).to.be.revertedWith("YO: ZeroAmount");
+        ).to.be.revertedWith("YO#000");
       });
       it("should withdraw frm from yo", async () => {
         await accounts[1].sendTransaction({
@@ -686,7 +852,7 @@ describe("Yield Optimizer tests", () => {
             accounts[2].address,
             "user"
           )
-        ).to.be.revertedWith("YO: Not enough tokens");
+        ).to.be.revertedWith("YO#002");
       });
       it("should revert withdraw if not enough usdc", async () => {
         await expect(
@@ -696,7 +862,103 @@ describe("Yield Optimizer tests", () => {
             accounts[2].address,
             "user"
           )
-        ).to.be.revertedWith("YO: Not enough tokens");
+        ).to.be.revertedWith("YO#002");
+      });
+    });
+    describe("test reward distribution and masterchef functionality", async () => {
+      it("should distribute rewards", async () => {
+        await yo.invest(
+          JUKU7_POOL_ADDRESS,
+          ethers.utils.parseUnits("100.0", 6),
+          deployer.address,
+          "user"
+        );
+
+        const bptBalance = await juku7.balanceOf(yo.address);
+        const usdcBalanceBefore = await usdc.balanceOf(yo.address);
+        const calcSwapFeeAmount = bptBalance
+          .mul(BigNumber.from("2000"))
+          .div(BigNumber.from("10000"));
+
+        await yo.harvest(JUKU7_POOL_ADDRESS, calcSwapFeeAmount);
+        const usdcBalanceAfter = await usdc.balanceOf(yo.address);
+        const bptBalanceAfter = await juku7.balanceOf(yo.address);
+        const epochInfo = await yo.poolRewards(JUKU7_POOL_ADDRESS, 0);
+        const reinvest = calcSwapFeeAmount
+          .mul(BigNumber.from("2000"))
+          .div(BigNumber.from("10000"));
+        expect(reinvest).to.be.equal(epochInfo.reinvestedBpt);
+        expect(bptBalanceAfter).to.be.equal(
+          bptBalance.sub(calcSwapFeeAmount.sub(reinvest))
+        );
+        expect(usdcBalanceAfter).to.be.gt(usdcBalanceBefore);
+        const poolInfo = await yo.poolInfo(JUKU7_POOL_ADDRESS);
+        const epochCounter = await yo.rewardsEpochCounter(JUKU7_POOL_ADDRESS);
+        expect(poolInfo.currentEpoch).to.be.equal(epochCounter);
+      });
+
+      it("should allocate with pool allocations", async () => {
+        const commisions = 2000;
+        const rewards = 4000;
+        const reinvested = 3000;
+        const treasury = 4000;
+        await yo.updatePoolAllocationPercents(
+          JUKU7_POOL_ADDRESS,
+          reinvested,
+          commisions,
+          rewards,
+          treasury
+        );
+        await yo.invest(
+          JUKU7_POOL_ADDRESS,
+          ethers.utils.parseUnits("100.0", 6),
+          deployer.address,
+          "user"
+        );
+        const bptBalance = await juku7.balanceOf(yo.address);
+        const usdcBalanceBefore = await usdc.balanceOf(yo.address);
+        const calcSwapFeeAmount = bptBalance
+          .mul(BigNumber.from("2000"))
+          .div(BigNumber.from("10000"));
+        await yo.harvest(JUKU7_POOL_ADDRESS, calcSwapFeeAmount);
+
+        const usdcBalanceAfter = await usdc.balanceOf(yo.address);
+        const bptBalanceAfter = await juku7.balanceOf(yo.address);
+        const epochInfo = await yo.poolRewards(JUKU7_POOL_ADDRESS, 1);
+        const reinvest = calcSwapFeeAmount
+          .mul(BigNumber.from("3000"))
+          .div(BigNumber.from("10000"));
+        expect(reinvest).to.be.equal(epochInfo.reinvestedBpt);
+        expect(bptBalanceAfter).to.be.equal(
+          bptBalance.sub(calcSwapFeeAmount.sub(reinvest))
+        );
+        expect(usdcBalanceAfter).to.be.gt(usdcBalanceBefore);
+        const poolInfo = await yo.poolInfo(JUKU7_POOL_ADDRESS);
+        const epochCounter = await yo.rewardsEpochCounter(JUKU7_POOL_ADDRESS);
+        expect(poolInfo.currentEpoch).to.be.equal(epochCounter);
+      });
+
+      it("should update pool allocation type", async () => {
+        await yo.changePoolAllocationType(JUKU7_POOL_ADDRESS, true);
+        const pool = await yo.poolInfo(JUKU7_POOL_ADDRESS);
+        expect(pool.isDefaultAllocations).to.be.equal(true);
+      });
+
+      it("should revert update pool allocation type if already assigned", async () => {
+        await expect(
+          yo.changePoolAllocationType(JUKU7_POOL_ADDRESS, true)
+        ).to.be.revertedWith("YO#007");
+      });
+
+      it("should revert harvest if balance not enough", async () => {
+        await expect(
+          yo.harvest(JUKU7_POOL_ADDRESS, ethers.utils.parseUnits("1000.0", 18))
+        ).to.be.revertedWith("YO#002");
+      });
+      it("should revert harvest if zero amount", async () => {
+        await expect(
+          yo.harvest(JUKU7_POOL_ADDRESS, ethers.utils.parseUnits("0", 18))
+        ).to.be.revertedWith("YO#000");
       });
     });
     describe("events tests", async () => {
@@ -706,8 +968,14 @@ describe("Yield Optimizer tests", () => {
         const YO = await ethers.getContractFactory("YieldOptimizer");
         yieldOptimizerEvents = await YO.deploy(
           usdc.address,
+          jukuToken.address,
           deployer.address,
-          vault.address
+          vault.address,
+          spookyRouter.address,
+          2000,
+          3750,
+          2500,
+          3750
         );
       });
       it("should emit event invest", async () => {
@@ -730,6 +998,13 @@ describe("Yield Optimizer tests", () => {
             "user"
           )
         ).to.emit(yo, "WithdrawFromPool");
+      });
+      it("should emit event harvest", async () => {
+        const bptBalanceAfter = await juku7.balanceOf(yo.address);
+        await expect(yo.harvest(JUKU7_POOL_ADDRESS, bptBalanceAfter)).to.emit(
+          yo,
+          "Harvest"
+        );
       });
       it("should emit event withdraw", async () => {
         await expect(
@@ -782,26 +1057,6 @@ describe("Yield Optimizer tests", () => {
         )
           .to.emit(yieldOptimizerEvents, "UpdatePoolExitType")
           .withArgs(LATE_ADDRESS, false);
-      });
-      it("should emit UpdateSwapRouteForDepositToken event", async () => {
-        await expect(
-          yieldOptimizerEvents.updateSwapRouteForDepositToken(
-            LATE_ADDRESS,
-            LATE_POOL_ID
-          )
-        )
-          .to.emit(yieldOptimizerEvents, "UpdateSwapRouteForDepositToken")
-          .withArgs(LATE_ADDRESS, LATE_POOL_ID);
-      });
-      it("should emit UpdateSwapRouteForExitToken event", async () => {
-        await expect(
-          yieldOptimizerEvents.updateSwapRouteForExitToken(
-            LATE_ADDRESS,
-            LATE_POOL_ID
-          )
-        )
-          .to.emit(yieldOptimizerEvents, "UpdateSwapRouteForExitToken")
-          .withArgs(LATE_ADDRESS, LATE_POOL_ID);
       });
       it("should emit UpdatePoolSwapRoutes event", async () => {
         await expect(
