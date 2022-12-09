@@ -99,7 +99,7 @@
     "eslint": "^8.17.0",
     "eslint-config-prettier": "^8.5.0",
     "ethereum-waffle": "^3.4.4",
-    "ethers": "^5.6.8",
+    "ethers": "^5.7.2",
     "hardhat": "^2.9.7",
     "hardhat-abi-exporter": "^2.9.0",
     "hardhat-contract-sizer": "^2.5.1",
