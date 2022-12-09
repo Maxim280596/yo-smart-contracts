@@ -5,8 +5,9 @@ pragma solidity 0.8.17;
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "./interfaces/IVault.sol";
 import "./interfaces/IWeightedPool.sol";
@@ -15,6 +16,7 @@ import "./lib/Errors.sol";
 // import "./YieldOptimizerStorage.sol";
 
 contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+    using SafeERC20Upgradeable for IERC20Upgradeable;
     IVault.FundManagement private funds;
     Allocations public defaultAllocations;
 
@@ -200,9 +202,9 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         });
 
         // swapKind = IVault.SwapKind.GIVEN_IN;
-        IERC20(_usdcToken).approve(_vault, type(uint256).max);
-        IERC20(_usdcToken).approve(_uniRouter, type(uint256).max);
-        IERC20(_jukuToken).approve(_uniRouter, type(uint256).max);
+        IERC20Upgradeable(_usdcToken).approve(_vault, type(uint256).max);
+        IERC20Upgradeable(_usdcToken).approve(_uniRouter, type(uint256).max);
+        IERC20Upgradeable(_jukuToken).approve(_uniRouter, type(uint256).max);
     }
 
     receive() external payable {}
@@ -274,7 +276,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         string memory userId
     ) external onlyAdmin isActive(poolAddress) {
         _require(
-            IERC20(usdcToken).balanceOf(address(this)) >= amount,
+            IERC20Upgradeable(usdcToken).balanceOf(address(this)) >= amount,
             Errors.NOT_ENOUGH_TOKENS
         );
         Pool storage pool = poolInfo[poolAddress];
@@ -283,12 +285,13 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             ? _investInOneToken(pool, amount)
             : _investInAllTokens(pool, amount);
 
-        uint256 bptBalanceBefore = IERC20(pool.bptToken).balanceOf(
+        uint256 bptBalanceBefore = IERC20Upgradeable(pool.bptToken).balanceOf(
             address(this)
         );
         _balancerJoin(pool.poolId, pool.tokens, giveAmounts);
-        uint256 bptBalance = IERC20(pool.bptToken).balanceOf(address(this)) -
-            bptBalanceBefore;
+        uint256 bptBalance = IERC20Upgradeable(pool.bptToken).balanceOf(
+            address(this)
+        ) - bptBalanceBefore;
 
         emit Invest(
             pool.poolId,
@@ -316,7 +319,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     ) external onlyAdmin isActive(poolAddress) {
         Pool storage pool = poolInfo[poolAddress];
         _require(
-            IERC20(pool.bptToken).balanceOf(address(this)) >= amount,
+            IERC20Upgradeable(pool.bptToken).balanceOf(address(this)) >= amount,
             Errors.NOT_ENOUGH_TOKENS
         );
         uint256 usdcExitAmount = pool.isExitInOneToken
@@ -396,9 +399,9 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         ];
         epoch.start = block.timestamp;
         pool.currentEpoch = rewardsEpochCounter[_poolAddress];
-        IERC20(_poolAddress).approve(vault, type(uint256).max);
+        IERC20Upgradeable(_poolAddress).approve(vault, type(uint256).max);
         for (uint256 i; i < poolTokens.length; i++) {
-            IERC20(poolTokens[i]).approve(vault, type(uint256).max);
+            IERC20Upgradeable(poolTokens[i]).approve(vault, type(uint256).max);
         }
         emit AddPool(
             pool.bptToken,
@@ -422,7 +425,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(
-            IERC20(pool.bptToken).balanceOf(address(this)) >= amount,
+            IERC20Upgradeable(pool.bptToken).balanceOf(address(this)) >= amount,
             Errors.NOT_ENOUGH_TOKENS
         );
         // _require(amount > 0, Errors.ZERO_AMOUNT);
@@ -516,10 +519,6 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             treasuryPercent: treasury,
             commisionsPercent: commisions
         });
-        // reinvestedDefault = reinvest;
-        // commisionsDefault = commisions;
-        // rewardsDefault = rewards;
-        // treasuryDefault = treasury;
         emit UpdateDefaultAllocation(reinvest, commisions, rewards, treasury);
     }
 
@@ -763,7 +762,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // @dev Public view function returns the balance of the USDC token on this contract.
     // */
     // function usdcBalance() public view returns (uint256) {
-    //     return IERC20(usdcToken).balanceOf(address(this));
+    //     return IERC20Upgradeable(usdcToken).balanceOf(address(this));
     // }
 
     /**
@@ -843,9 +842,11 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             (bool sent, ) = user.call{value: amount}("");
             _require(sent, Errors.FAILED_SENT_ETHER);
         } else {
-            uint256 balanceToken = IERC20(token).balanceOf(address(this));
+            uint256 balanceToken = IERC20Upgradeable(token).balanceOf(
+                address(this)
+            );
             _require(balanceToken >= amount, Errors.NOT_ENOUGH_TOKENS);
-            IERC20(token).transfer(user, amount);
+            IERC20Upgradeable(token).safeTransfer(user, amount);
         }
 
         emit Withdraw(token, amount, user, userId);
@@ -960,7 +961,9 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         for (uint256 i = 0; i < pool.tokens.length; i++) {
             outAmounts[i] = 0;
         }
-        balanceBefore = IERC20(pool.exitToken).balanceOf(address(this));
+        balanceBefore = IERC20Upgradeable(pool.exitToken).balanceOf(
+            address(this)
+        );
         _balancerExitInOneToken(
             pool.poolId,
             pool.tokens,
@@ -968,7 +971,9 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             bptAmount,
             pool.exitTokenIndex
         );
-        balanceAfter = IERC20(pool.exitToken).balanceOf(address(this));
+        balanceAfter = IERC20Upgradeable(pool.exitToken).balanceOf(
+            address(this)
+        );
         uint256 exitBalance = balanceAfter - balanceBefore;
 
         uint256 usdcExitAmount;
@@ -1191,7 +1196,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     {
         uint256[] memory balances = new uint256[](tokens.length);
         for (uint256 i; i < tokens.length; i++) {
-            balances[i] = IERC20(tokens[i]).balanceOf(address(this));
+            balances[i] = IERC20Upgradeable(tokens[i]).balanceOf(address(this));
         }
         return balances;
     }
