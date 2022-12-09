@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import { ethers, waffle } from "hardhat";
+import { ethers, waffle, upgrades } from "hardhat";
 import { vaultAbi } from "./abis/vaultAbi";
 import { weightedPoolAbi } from "./abis/weightedPoolAbi";
 import { erc20Abi } from "./abis/erc20Abi";
@@ -22,7 +22,6 @@ import {
   SWAP_ROUTER,
 } from "./constants";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { YieldOptimizer } from "../typechain-types";
 import { BigNumber } from "ethers";
 
 const provider = waffle.provider;
@@ -33,7 +32,7 @@ describe("Yield Optimizer tests", () => {
   let accounts: SignerWithAddress[];
   let deployer: SignerWithAddress;
   let usdc: any;
-  let yo: YieldOptimizer;
+  let yo: any;
   let batlePool: any;
   let networkBundle: any;
   let latePool: any;
@@ -58,6 +57,7 @@ describe("Yield Optimizer tests", () => {
     accounts = others;
     deployer = ownerAccount;
     const YO = await ethers.getContractFactory("YieldOptimizer");
+
     const JUKU = await ethers.getContractFactory("JUKU_ERC20");
 
     spookyRouter = await ethers.getContractAt(router, SWAP_ROUTER);
@@ -68,17 +68,22 @@ describe("Yield Optimizer tests", () => {
       []
     );
     const poolID = await juku7.getPoolId();
-    yo = await YO.deploy(
-      usdc.address,
-      jukuToken.address,
-      deployer.address,
-      vault.address,
-      spookyRouter.address,
-      2000,
-      3750,
-      2500,
-      3750
+    yo = await upgrades.deployProxy(
+      YO,
+      [
+        usdc.address,
+        jukuToken.address,
+        deployer.address,
+        vault.address,
+        spookyRouter.address,
+        2000,
+        3750,
+        2500,
+        3750,
+      ],
+      { initializer: "initialize", kind: "uups" }
     );
+
     await yo.addPool(
       "0xdf02adb3cd587da89af29e58de70b840e49490250001000000000000000005b8",
       JUKU7_POOL_ADDRESS,
@@ -187,32 +192,40 @@ describe("Yield Optimizer tests", () => {
     describe("deploy tests", async () => {
       it("should deploy yo", async () => {
         const YO = await ethers.getContractFactory("YieldOptimizer");
-        const yieldOptimizer = await YO.deploy(
-          usdc.address,
-          jukuToken.address,
-          deployer.address,
-          vault.address,
-          spookyRouter.address,
-          2000,
-          3750,
-          2500,
-          3750
+        const yieldOptimizer = await upgrades.deployProxy(
+          YO,
+          [
+            usdc.address,
+            jukuToken.address,
+            deployer.address,
+            vault.address,
+            spookyRouter.address,
+            2000,
+            3750,
+            2500,
+            3750,
+          ],
+          { initializer: "initialize", kind: "uups" }
         );
         await expect(vault.address).to.equal(await yieldOptimizer.vault());
       });
       it("should revert deploy if passed zero address", async () => {
         const YO = await ethers.getContractFactory("YieldOptimizer");
         await expect(
-          YO.deploy(
-            usdc.address,
-            jukuToken.address,
-            deployer.address,
-            address(0),
-            spookyRouter.address,
-            2000,
-            3750,
-            2500,
-            3750
+          upgrades.deployProxy(
+            YO,
+            [
+              usdc.address,
+              jukuToken.address,
+              deployer.address,
+              address(0),
+              spookyRouter.address,
+              2000,
+              3750,
+              2500,
+              3750,
+            ],
+            { initializer: "initialize", kind: "uups" }
           )
         ).to.be.revertedWith("YO#001");
       });
@@ -220,51 +233,63 @@ describe("Yield Optimizer tests", () => {
       it("should revert deploy if invalid percent", async () => {
         const YO = await ethers.getContractFactory("YieldOptimizer");
         await expect(
-          YO.deploy(
-            usdc.address,
-            jukuToken.address,
-            deployer.address,
-            vault.address,
-            spookyRouter.address,
-            20000,
-            3750,
-            2500,
-            3750
+          upgrades.deployProxy(
+            YO,
+            [
+              usdc.address,
+              jukuToken.address,
+              deployer.address,
+              vault.address,
+              spookyRouter.address,
+              20000,
+              3750,
+              2500,
+              3750,
+            ],
+            { initializer: "initialize", kind: "uups" }
           )
         ).to.be.revertedWith("YO#012");
       });
       it("should revert deploy if invalid allocation percent", async () => {
         const YO = await ethers.getContractFactory("YieldOptimizer");
         await expect(
-          YO.deploy(
+          upgrades.deployProxy(
+            YO,
+            [
+              usdc.address,
+              jukuToken.address,
+              deployer.address,
+              vault.address,
+              spookyRouter.address,
+              2000,
+              33750,
+              2500,
+              3750,
+            ],
+            { initializer: "initialize", kind: "uups" }
+          )
+        ).to.be.revertedWith("YO#011");
+      });
+    });
+    describe("add & update pool tests", async () => {
+      let yieldOptimizer: any;
+
+      before(async () => {
+        const YO = await ethers.getContractFactory("YieldOptimizer");
+        yieldOptimizer = await upgrades.deployProxy(
+          YO,
+          [
             usdc.address,
             jukuToken.address,
             deployer.address,
             vault.address,
             spookyRouter.address,
             2000,
-            33750,
+            3750,
             2500,
-            3750
-          )
-        ).to.be.revertedWith("YO#011");
-      });
-    });
-    describe("add & update pool tests", async () => {
-      let yieldOptimizer: YieldOptimizer;
-
-      before(async () => {
-        const YO = await ethers.getContractFactory("YieldOptimizer");
-        yieldOptimizer = await YO.deploy(
-          usdc.address,
-          jukuToken.address,
-          deployer.address,
-          vault.address,
-          spookyRouter.address,
-          2000,
-          3750,
-          2500,
-          3750
+            3750,
+          ],
+          { initializer: "initialize", kind: "uups" }
         );
       });
       it("should revert add pool if unequal array length", async () => {
@@ -410,14 +435,11 @@ describe("Yield Optimizer tests", () => {
           newRewards,
           newTreasury
         );
-        const commisions = await yieldOptimizer.commisionsDefault();
-        const treasury = await yieldOptimizer.treasuryDefault();
-        const rewards = await yieldOptimizer.rewardsDefault();
-        const reinvested = await yieldOptimizer.reinvestedDefault();
-        expect(commisions).to.be.equal(newCommisions);
-        expect(rewards).to.be.equal(newRewards);
-        expect(treasury).to.be.equal(newTreasury);
-        expect(reinvested).to.be.equal(reinvest);
+        const allocations = await yieldOptimizer.defaultAllocations();
+        expect(allocations.commisionsPercent).to.be.equal(newCommisions);
+        expect(allocations.rewardsPercent).to.be.equal(newRewards);
+        expect(allocations.treasuryPercent).to.be.equal(newTreasury);
+        expect(allocations.reinvestedPercent).to.be.equal(reinvest);
       });
       it("should revert update allocations if invalid total percent", async () => {
         const newCommisions = 1000;
@@ -467,29 +489,19 @@ describe("Yield Optimizer tests", () => {
           yieldOptimizer.updatePoolExitType(JUKU7_POOL_ADDRESS, false)
         ).to.be.revertedWith("YO#007");
       });
-      it("should turn off pool", async () => {
-        await yieldOptimizer.turnOffPool(JUKU7_POOL_ADDRESS);
+      it("should deactivate pool", async () => {
+        await yieldOptimizer.togglePoolActivity(JUKU7_POOL_ADDRESS);
         const poolInfo = await yieldOptimizer.poolInfo(JUKU7_POOL_ADDRESS);
         expect(poolInfo.isActive).to.be.equal(false);
       });
-      it("should revert turn off is already off", async () => {
-        await expect(
-          yieldOptimizer.turnOffPool(JUKU7_POOL_ADDRESS)
-        ).to.be.revertedWith("YO#007");
-      });
-      it("should turn on pool", async () => {
-        await yieldOptimizer.turnOnPool(JUKU7_POOL_ADDRESS);
+      it("should activate pool", async () => {
+        await yieldOptimizer.togglePoolActivity(JUKU7_POOL_ADDRESS);
         const poolInfo = await yieldOptimizer.poolInfo(JUKU7_POOL_ADDRESS);
         expect(poolInfo.isActive).to.be.equal(true);
       });
-      it("should revert turn on is already on", async () => {
-        await expect(
-          yieldOptimizer.turnOnPool(JUKU7_POOL_ADDRESS)
-        ).to.be.revertedWith("YO#007");
-      });
       it("should update admin", async () => {
         await yieldOptimizer.updateAdmin(accounts[1].address);
-        await expect(await yieldOptimizer.admin()).to.be.equal(
+        await expect(await yieldOptimizer.adminWallet()).to.be.equal(
           accounts[1].address
         );
       });
@@ -594,11 +606,6 @@ describe("Yield Optimizer tests", () => {
       });
     });
     describe("test view methods", async () => {
-      it("should usdcBalance return balance of usdc token", async () => {
-        const balance = await usdc.balanceOf(yo.address);
-        const methodBalance = await yo.usdcBalance();
-        expect(balance).to.be.equal(methodBalance);
-      });
       it("should return pool tokens", async () => {
         const poolTokens = await yo.getPoolTokens(JUKU7_POOL_ADDRESS);
         const tokens = [
@@ -897,6 +904,12 @@ describe("Yield Optimizer tests", () => {
         expect(poolInfo.currentEpoch).to.be.equal(epochCounter);
       });
 
+      it("should revert update pool allocation type if pool allocations not setted", async () => {
+        await expect(
+          yo.changePoolAllocationType(JUKU7_POOL_ADDRESS, false)
+        ).to.be.revertedWith("YO#012");
+      });
+
       it("should allocate with pool allocations", async () => {
         const commisions = 2000;
         const rewards = 4000;
@@ -958,24 +971,40 @@ describe("Yield Optimizer tests", () => {
       it("should revert harvest if zero amount", async () => {
         await expect(
           yo.harvest(JUKU7_POOL_ADDRESS, ethers.utils.parseUnits("0", 18))
-        ).to.be.revertedWith("YO#000");
+        ).to.be.revertedWith("BAL#510");
+      });
+    });
+    describe("should upgrade implementation", async () => {
+      it("upgrade", async () => {
+        const newImplementation = await ethers.getContractFactory(
+          "YieldOptimizerV2"
+        );
+        yo = await upgrades.upgradeProxy(yo.address, newImplementation);
+        const pool = await yo.poolInfo(JUKU7_POOL_ADDRESS);
+        expect(pool.bptToken).to.be.equal(JUKU7_POOL_ADDRESS);
+        const balance = await yo.usdcBalance();
+        expect(balance).to.be.gt(BigNumber.from("0"));
       });
     });
     describe("events tests", async () => {
-      let yieldOptimizerEvents: YieldOptimizer;
+      let yieldOptimizerEvents: any;
 
       before(async () => {
         const YO = await ethers.getContractFactory("YieldOptimizer");
-        yieldOptimizerEvents = await YO.deploy(
-          usdc.address,
-          jukuToken.address,
-          deployer.address,
-          vault.address,
-          spookyRouter.address,
-          2000,
-          3750,
-          2500,
-          3750
+        yieldOptimizerEvents = await upgrades.deployProxy(
+          YO,
+          [
+            usdc.address,
+            jukuToken.address,
+            deployer.address,
+            vault.address,
+            spookyRouter.address,
+            2000,
+            3750,
+            2500,
+            3750,
+          ],
+          { initializer: "initialize", kind: "uups" }
         );
       });
       it("should emit event invest", async () => {
@@ -1098,20 +1127,33 @@ describe("Yield Optimizer tests", () => {
           .to.emit(yieldOptimizerEvents, "UpdateExitTokenSettings")
           .withArgs(LATE_ADDRESS, USDC_FTM_POOL_ID, WFTM_ADDRESS, 0);
       });
-      it("should emit TurnOffPool event", async () => {
-        await expect(yieldOptimizerEvents.turnOffPool(LATE_ADDRESS))
-          .to.emit(yieldOptimizerEvents, "TurnOffPool")
+      it("should emit TogglePoolActivity event", async () => {
+        await expect(yieldOptimizerEvents.togglePoolActivity(LATE_ADDRESS))
+          .to.emit(yieldOptimizerEvents, "TogglePoolActivity")
           .withArgs(LATE_ADDRESS, false);
-      });
-      it("should emit TurnOnPool event", async () => {
-        await expect(yieldOptimizerEvents.turnOnPool(LATE_ADDRESS))
-          .to.emit(yieldOptimizerEvents, "TurnOnPool")
-          .withArgs(LATE_ADDRESS, true);
       });
       it("should emit UpdateAdmin event", async () => {
         await expect(yieldOptimizerEvents.updateAdmin(accounts[8].address))
-          .to.emit(yieldOptimizerEvents, "UpdateAdmin")
+          .to.emit(yieldOptimizerEvents, "UpdateAdminWallet")
           .withArgs(accounts[8].address);
+      });
+      it("should emit UpdatePoolAllocationType event", async () => {
+        const commisions = 3000;
+        const rewards = 4000;
+        const reinvested = 3000;
+        const treasury = 3000;
+        await yieldOptimizerEvents.updatePoolAllocationPercents(
+          LATE_ADDRESS,
+          reinvested,
+          commisions,
+          rewards,
+          treasury
+        );
+        await expect(
+          yieldOptimizerEvents.changePoolAllocationType(LATE_ADDRESS, true)
+        )
+          .to.emit(yieldOptimizerEvents, "UpdatePoolAllocationType")
+          .withArgs(LATE_ADDRESS, true);
       });
     });
   });

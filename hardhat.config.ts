@@ -4,6 +4,7 @@ import { HardhatUserConfig, task } from "hardhat/config";
 import "@nomiclabs/hardhat-ethers";
 import "@nomiclabs/hardhat-waffle";
 import "@nomiclabs/hardhat-etherscan";
+import "@openzeppelin/hardhat-upgrades";
 import "@typechain/hardhat";
 import "xdeployer";
 import "hardhat-gas-reporter";
@@ -46,22 +47,23 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 1,
             details: {
               yul: true,
             },
           },
         },
+        // evmVersion: "byzantium"
       },
-      {
-        version: "0.7.0",
-        settings: {
-          optimizer: {
-            enabled: true,
-            runs: 200,
-          },
-        },
-      },
+      // {
+      //   version: "0.7.0",
+      //   settings: {
+      //     optimizer: {
+      //       enabled: true,
+      //       runs: 1,
+      //     },
+      //   },
+      // },
     ],
   },
   networks: {

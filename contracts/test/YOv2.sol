@@ -7,14 +7,18 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./interfaces/IUniswapV2Router.sol";
-import "./interfaces/IVault.sol";
-import "./interfaces/IWeightedPool.sol";
-import "./lib/Errors.sol";
+import "../interfaces/IUniswapV2Router.sol";
+import "../interfaces/IVault.sol";
+import "../interfaces/IWeightedPool.sol";
+import "../lib/Errors.sol";
 
 // import "./YieldOptimizerStorage.sol";
 
-contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract YieldOptimizerV2 is
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable
+{
     IVault.FundManagement private funds;
     Allocations public defaultAllocations;
 
@@ -192,12 +196,12 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             payable(address(this)),
             false
         );
-        defaultAllocations = Allocations({
-            reinvestedPercent: _reinvestedPercent,
-            rewardsPercent: _rewardsPercent,
-            treasuryPercent: _treasuryPercent,
-            commisionsPercent: _commisionsPercent
-        });
+        defaultAllocations = Allocations(
+            _reinvestedPercent,
+            _rewardsPercent,
+            _treasuryPercent,
+            _commisionsPercent
+        );
 
         // swapKind = IVault.SwapKind.GIVEN_IN;
         IERC20(_usdcToken).approve(_vault, type(uint256).max);
@@ -533,13 +537,6 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             isDefault != pool.isDefaultAllocations,
             Errors.ALREADY_ASSIGNED
         );
-        _require(
-            pool.allocations.commisionsPercent +
-                pool.allocations.rewardsPercent +
-                pool.allocations.treasuryPercent ==
-                PRECISSION,
-            Errors.PERCENT_ERROR
-        );
         pool.isDefaultAllocations = isDefault;
         emit UpdatePoolAllocationType(poolAddress, isDefault);
     }
@@ -759,68 +756,68 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     //======================================================= Public Functions ========================================================
 
+    /**
+    @dev Public view function returns the balance of the USDC token on this contract.
+    */
+    function usdcBalance() public view returns (uint256) {
+        return IERC20(usdcToken).balanceOf(address(this));
+    }
+
     // /**
-    // @dev Public view function returns the balance of the USDC token on this contract.
-    // */
-    // function usdcBalance() public view returns (uint256) {
-    //     return IERC20(usdcToken).balanceOf(address(this));
-    // }
-
-    /**
-    @dev Public view function returns true if pool is added to YO or false if not added.
-    @param poolAddress pool address.
-    */
-    function poolIsAdded(address poolAddress)
-        public
-        view
-        isAdded(poolAddress)
-        returns (bool)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return poolAddress == pool.bptToken;
-    }
-
-    /**
-    @dev Public view function returns swap routes for pool tokens.
-    @param poolAddress pool address.
-    */
-    function getPoolSwapRoutes(address poolAddress)
-        public
-        view
-        isAdded(poolAddress)
-        returns (bytes32[] memory)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return pool.swapRoutes;
-    }
-
-    /**
-    @dev Public view function returns tokens weights in the pool.
-    @param poolAddress pool address.
-    */
-    function getPoolWeights(address poolAddress)
-        public
-        view
-        isAdded(poolAddress)
-        returns (uint256[] memory)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return pool.tokensWeights;
-    }
-
-    /**
-    // @dev Public view function returns pool tokensl.
+    // @dev Public view function returns true if pool is added to YO or false if not added.
     // @param poolAddress pool address.
     // */
-    function getPoolTokens(address poolAddress)
-        public
-        view
-        isAdded(poolAddress)
-        returns (address[] memory)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return pool.tokens;
-    }
+    // function poolIsAdded(address poolAddress)
+    //     public
+    //     view
+    //     isAdded(poolAddress)
+    //     returns (bool)
+    // {
+    //     Pool storage pool = poolInfo[poolAddress];
+    //     return poolAddress == pool.bptToken;
+    // }
+
+    // /**
+    // @dev Public view function returns swap routes for pool tokens.
+    // @param poolAddress pool address.
+    // */
+    // function getPoolSwapRoutes(address poolAddress)
+    //     public
+    //     view
+    //     isAdded(poolAddress)
+    //     returns (bytes32[] memory)
+    // {
+    //     Pool storage pool = poolInfo[poolAddress];
+    //     return pool.swapRoutes;
+    // }
+
+    // /**
+    // @dev Public view function returns tokens weights in the pool.
+    // @param poolAddress pool address.
+    // */
+    // function getPoolWeights(address poolAddress)
+    //     public
+    //     view
+    //     isAdded(poolAddress)
+    //     returns (uint256[] memory)
+    // {
+    //     Pool storage pool = poolInfo[poolAddress];
+    //     return pool.tokensWeights;
+    // }
+
+    // /**
+    // // @dev Public view function returns pool tokensl.
+    // // @param poolAddress pool address.
+    // // */
+    // function getPoolTokens(address poolAddress)
+    //     public
+    //     view
+    //     isAdded(poolAddress)
+    //     returns (address[] memory)
+    // {
+    //     Pool storage pool = poolInfo[poolAddress];
+    //     return pool.tokens;
+    // }
 
     //======================================================= Internal Functions ========================================================
 
