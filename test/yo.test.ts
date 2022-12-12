@@ -606,6 +606,10 @@ describe("Yield Optimizer tests", () => {
       });
     });
     describe("test view methods", async () => {
+      it("should return implementation address", async () => {
+        const impl = await yo.getImplementation();
+        expect(impl).to.be.not.equal(address(0));
+      });
       it("should return pool tokens", async () => {
         const poolTokens = await yo.getPoolTokens(JUKU7_POOL_ADDRESS);
         const tokens = [
