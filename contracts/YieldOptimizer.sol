@@ -21,10 +21,10 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     Allocations public defaultAllocations;
 
     struct Allocations {
-        uint256 reinvestedPercent;
-        uint256 rewardsPercent;
-        uint256 treasuryPercent;
-        uint256 commisionsPercent;
+        uint256 reinvestedPercent; // The percentage of rewards that will be reinvested
+        uint256 rewardsPercent; // A percentage of the rewards that will be exchanged for Juku token and paid to the user
+        uint256 treasuryPercent; // A percentage of the rewards that will be exchanged for USDC token and sent to the treasury
+        uint256 commisionsPercent; // A percentage of the rewards that will be used as a project commission
     }
 
     struct Pool {
@@ -42,29 +42,29 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         bool isActive; // If true the pull works, if false then not
         bool isDepositInOneToken; // if true the deposits makes in one token, if false then in all pool tokens
         bool isExitInOneToken; // if true the withdrawals makes in one token, if false then in all pool tokens
-        bool isDefaultAllocations;
-        Allocations allocations;
+        bool isDefaultAllocations; // If true, then the default distribution will be used, if false - individual
+        Allocations allocations; // Individual distribution of rewards for the pool
     }
 
     struct Epoch {
-        uint256 commisions;
-        uint256 jukuRewards;
-        uint256 reinvestedBpt;
-        uint256 treasuryRevenue;
-        uint256 start;
-        uint256 end;
+        uint256 commisions; // Amount of collected commissions in USDC token per epoch
+        uint256 jukuRewards; // Amount of collected rewards in Juku token per epoch
+        uint256 reinvestedBpt; // The amount of reinvested BPT tokens per epoch
+        uint256 treasuryRevenue; // Amount of collected treasury revenue in USDC token per epoch
+        uint256 start; // epoch start timestamp
+        uint256 end; // epoch end timestamp
     }
 
-    uint256 private constant PRECISSION = 10000;
+    uint256 private constant PRECISSION = 10000; // PRECISSION for math operation
     address public usdcToken; // USDC token
     address public jukuToken; // Juku token address
     address public adminWallet; // contract adminWallet address
     address public vault; // Beethoven X vault address
-    address public swapRouter;
+    address public swapRouter; // swap router address
     address[] public pathToJuku; // SwapRoute to Juku token
     mapping(address => Pool) public poolInfo; // Info about pool. See Pool struct.
-    mapping(address => mapping(uint256 => Epoch)) public poolRewards;
-    mapping(address => uint256) public rewardsEpochCounter;
+    mapping(address => mapping(uint256 => Epoch)) public poolRewards; // information about the distribution of rewards in the epoch
+    mapping(address => uint256) public rewardsEpochCounter; // a counter of the number of epochs for a particular pool
 
     //======================================================= Events ========================================================
 
@@ -95,6 +95,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address user,
         string userId
     );
+    ////@notice emitted when the rewards are distributed for the epoch
     event Harvest(
         address pool,
         bytes32 poolId,
@@ -132,6 +133,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address newExitToken,
         uint256 exitTokenIndex
     );
+    ////@notice emitted when setting up the individual reward distribution for the pool
     event UpdateAllocation(
         address pool,
         uint256 reinvest,
@@ -139,15 +141,20 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 rewards,
         uint256 treasury
     );
+    ////@notice emitted when setting up the default reward distribution
     event UpdateDefaultAllocation(
         uint256 reinvest,
         uint256 commisions,
         uint256 rewards,
         uint256 treasury
     );
+    ////@notice emitted when the address of the swapRouter contract is updated
     event UpdateSwapRouter(address newSwapRouter);
+    ////@notice emitted when the swap route for juku token is updated
     event UpdatePathToJuku(address[] newPath);
+    ////@notice emitted when the pool activity changes
     event TogglePoolActivity(address pool, bool isActive);
+    ////@notice emitted when the pool allocation type is changed
     event UpdatePoolAllocationType(address pool, bool isDefault);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -161,10 +168,10 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address _admin, // admin address
         address _vault, // Beethoven X Vault address
         address _uniRouter, // spookySwap router
-        uint256 _reinvestedPercent,
-        uint256 _rewardsPercent,
-        uint256 _treasuryPercent,
-        uint256 _commisionsPercent
+        uint256 _reinvestedPercent, // default reinvested percent. This argument is separated from the rest of the distribution. Must be from 0 - 10000.
+        uint256 _rewardsPercent, // default rewards percent
+        uint256 _treasuryPercent, // default treasury revenue percent
+        uint256 _commisionsPercent // default commisions percent._rewardsPercent + _treasuryPercent + _commisionsPercent should be equal 10000.
     ) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -201,7 +208,6 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             commisionsPercent: _commisionsPercent
         });
 
-        // swapKind = IVault.SwapKind.GIVEN_IN;
         IERC20Upgradeable(_usdcToken).approve(_vault, type(uint256).max);
         IERC20Upgradeable(_usdcToken).approve(_uniRouter, type(uint256).max);
         IERC20Upgradeable(_jukuToken).approve(_uniRouter, type(uint256).max);
@@ -380,7 +386,6 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
         pool.tokens = poolTokens;
         pool.poolId = _poolId;
-        // pool.poolName = IWeightedPool(_poolAddress).name();
         pool.tokensWeights = IWeightedPool(_poolAddress).getNormalizedWeights();
         pool.depositToken = _depositToken;
         pool.exitToken = _exitToken;
@@ -400,7 +405,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         epoch.start = block.timestamp;
         pool.currentEpoch = rewardsEpochCounter[_poolAddress];
         IERC20Upgradeable(_poolAddress).approve(vault, type(uint256).max);
-        for (uint256 i; i < poolTokens.length; i++) {
+        for (uint256 i = 0; i < poolTokens.length; i++) {
             IERC20Upgradeable(poolTokens[i]).approve(vault, type(uint256).max);
         }
         emit AddPool(
@@ -428,7 +433,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             IERC20Upgradeable(pool.bptToken).balanceOf(address(this)) >= amount,
             Errors.NOT_ENOUGH_TOKENS
         );
-        // _require(amount > 0, Errors.ZERO_AMOUNT);
+
         (uint256 reinvest, uint256 totalWithdrawAmount) = _calcHarvestAmount(
             poolAddress,
             amount
@@ -475,6 +480,17 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         );
     }
 
+    /**
+    @dev The function configures the individual distribution of rewards for the pool. 
+    reinvest must be between 0 and 10000, it was separated from other percentages for gas optimization.
+    commissions + rewards + treasury should be equal to 10000(PRECISSION).
+    Only the owner or admin can call.
+    @param poolAddress pool contract address
+    @param reinvest reinvest percent
+    @param commisions commissions percent
+    @param rewards rewards percent
+    @param treasury treasury percent
+    */
     function updatePoolAllocationPercents(
         address poolAddress,
         uint256 reinvest,
@@ -502,6 +518,16 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         );
     }
 
+    /**
+    @dev The function configures the default  distribution of rewards for all pools if pools havent individualallocations. 
+    reinvest must be between 0 and 10000, it was separated from other percentages for gas optimization.
+    commissions + rewards + treasury should be equal to 10000(PRECISSION).
+    Only the owner or admin can call.
+    @param reinvest reinvest percent
+    @param commisions commissions percent
+    @param rewards rewards percent
+    @param treasury treasury percent
+    */
     function updateDefaultAllocationPercents(
         uint256 reinvest,
         uint256 commisions,
@@ -522,6 +548,11 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit UpdateDefaultAllocation(reinvest, commisions, rewards, treasury);
     }
 
+    /**
+    @dev The function switches between default and individual reward distribution types
+    @param poolAddress pool address
+    @param isDefault if true pool use default allocations else if false pool use individual allocations
+    */
     function changePoolAllocationType(address poolAddress, bool isDefault)
         external
         onlyAdmin
@@ -543,67 +574,23 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit UpdatePoolAllocationType(poolAddress, isDefault);
     }
 
+    /**
+    @dev The function updates the swap router address
+    @param newSwapRouter new swap router adrress
+    */
     function updateSwapRouter(address newSwapRouter) external onlyAdmin {
         _require(newSwapRouter != address(0), Errors.ZERO_ADDRESS);
         swapRouter = newSwapRouter;
         emit UpdateSwapRouter(newSwapRouter);
     }
 
+    /**
+    @dev The function updates path to juku
+    @param newPath new swap route for juku
+    */
     function updatePathToJuku(address[] memory newPath) external onlyAdmin {
         pathToJuku = newPath;
         emit UpdatePathToJuku(newPath);
-    }
-
-    function _calcHarvestAmount(address poolAddress, uint256 amount)
-        internal
-        view
-        returns (uint256 reinvest, uint256 totalWithdrawAmount)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        if (!pool.isDefaultAllocations) {
-            reinvest =
-                (amount * pool.allocations.reinvestedPercent) /
-                PRECISSION;
-            totalWithdrawAmount = amount - reinvest;
-        } else {
-            reinvest =
-                (amount * defaultAllocations.reinvestedPercent) /
-                PRECISSION;
-            totalWithdrawAmount = amount - reinvest;
-        }
-    }
-
-    function _allocate(address poolAddress, uint256 usdcAmount)
-        internal
-        view
-        returns (
-            uint256 commisions,
-            uint256 rewards,
-            uint256 treasury
-        )
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        if (!pool.isDefaultAllocations) {
-            commisions =
-                (usdcAmount * pool.allocations.commisionsPercent) /
-                PRECISSION;
-            rewards =
-                (usdcAmount * pool.allocations.rewardsPercent) /
-                PRECISSION;
-            treasury =
-                (usdcAmount * pool.allocations.treasuryPercent) /
-                PRECISSION;
-        } else {
-            commisions =
-                (usdcAmount * defaultAllocations.commisionsPercent) /
-                PRECISSION;
-            rewards =
-                (usdcAmount * defaultAllocations.rewardsPercent) /
-                PRECISSION;
-            treasury =
-                (usdcAmount * defaultAllocations.treasuryPercent) /
-                PRECISSION;
-        }
     }
 
     /**
@@ -757,20 +744,12 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     //======================================================= Public Functions ========================================================
-
-    // /**
-    // @dev Public view function returns the balance of the USDC token on this contract.
-    // */
-    // function usdcBalance() public view returns (uint256) {
-    //     return IERC20Upgradeable(usdcToken).balanceOf(address(this));
-    // }
-
     /**
     @dev Public view function returns true if pool is added to YO or false if not added.
     @param poolAddress pool address.
     */
     function poolIsAdded(address poolAddress)
-        public
+        external
         view
         isAdded(poolAddress)
         returns (bool)
@@ -784,7 +763,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     @param poolAddress pool address.
     */
     function getPoolSwapRoutes(address poolAddress)
-        public
+        external
         view
         isAdded(poolAddress)
         returns (bytes32[] memory)
@@ -798,7 +777,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     @param poolAddress pool address.
     */
     function getPoolWeights(address poolAddress)
-        public
+        external
         view
         isAdded(poolAddress)
         returns (uint256[] memory)
@@ -812,7 +791,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     // @param poolAddress pool address.
     // */
     function getPoolTokens(address poolAddress)
-        public
+        external
         view
         isAdded(poolAddress)
         returns (address[] memory)
@@ -1068,7 +1047,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256[] memory balancesAfter
     ) internal pure returns (uint256[] memory) {
         uint256[] memory balances = new uint256[](balancesBefore.length);
-        for (uint256 i; i < balancesBefore.length; i++) {
+        for (uint256 i = 0; i < balancesBefore.length; i++) {
             balances[i] = balancesAfter[i] - balancesBefore[i];
         }
         return balances;
@@ -1195,10 +1174,74 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         returns (uint256[] memory)
     {
         uint256[] memory balances = new uint256[](tokens.length);
-        for (uint256 i; i < tokens.length; i++) {
+        for (uint256 i = 0; i < tokens.length; i++) {
             balances[i] = IERC20Upgradeable(tokens[i]).balanceOf(address(this));
         }
         return balances;
+    }
+
+    /**
+    @dev An auxiliary function for calculating the amount of the transfer and which will be distributed between rewards, 
+    commissions and treasury.
+    @param poolAddress pool address
+    @param amount bpt tokens amount
+    */
+    function _calcHarvestAmount(address poolAddress, uint256 amount)
+        internal
+        view
+        returns (uint256 reinvest, uint256 totalWithdrawAmount)
+    {
+        Pool storage pool = poolInfo[poolAddress];
+        if (!pool.isDefaultAllocations) {
+            reinvest =
+                (amount * pool.allocations.reinvestedPercent) /
+                PRECISSION;
+            totalWithdrawAmount = amount - reinvest;
+        } else {
+            reinvest =
+                (amount * defaultAllocations.reinvestedPercent) /
+                PRECISSION;
+            totalWithdrawAmount = amount - reinvest;
+        }
+    }
+
+    /**
+    @dev 
+    An auxiliary function for calculating the distribution of commissions, rewards and treasury parts.
+    @param poolAddress pool address
+    @param usdcAmount bpt tokens amount
+    */
+    function _allocate(address poolAddress, uint256 usdcAmount)
+        internal
+        view
+        returns (
+            uint256 commisions,
+            uint256 rewards,
+            uint256 treasury
+        )
+    {
+        Pool storage pool = poolInfo[poolAddress];
+        if (!pool.isDefaultAllocations) {
+            commisions =
+                (usdcAmount * pool.allocations.commisionsPercent) /
+                PRECISSION;
+            rewards =
+                (usdcAmount * pool.allocations.rewardsPercent) /
+                PRECISSION;
+            treasury =
+                (usdcAmount * pool.allocations.treasuryPercent) /
+                PRECISSION;
+        } else {
+            commisions =
+                (usdcAmount * defaultAllocations.commisionsPercent) /
+                PRECISSION;
+            rewards =
+                (usdcAmount * defaultAllocations.rewardsPercent) /
+                PRECISSION;
+            treasury =
+                (usdcAmount * defaultAllocations.treasuryPercent) /
+                PRECISSION;
+        }
     }
 
     function _authorizeUpgrade(address newImplementation)
