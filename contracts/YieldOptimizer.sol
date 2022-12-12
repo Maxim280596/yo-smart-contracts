@@ -1244,6 +1244,16 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         }
     }
 
+    /**
+     * @dev Function that should revert when `msg.sender` is not authorized to upgrade the contract. Called by
+     * {upgradeTo} and {upgradeToAndCall}.
+     *
+     * Normally, this function will use an xref:access.adoc[access control] modifier such as {Ownable-onlyOwner}.
+     *
+     * ```solidity
+     * function _authorizeUpgrade(address) internal override onlyOwner {}
+     * ```
+     */
     function _authorizeUpgrade(address newImplementation)
         internal
         override
