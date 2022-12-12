@@ -744,6 +744,11 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     //======================================================= Public Functions ========================================================
+    function getImplementation() public view returns (address) {
+        address impl = _getImplementation();
+        return impl;
+    }
+
     /**
     @dev Public view function returns true if pool is added to YO or false if not added.
     @param poolAddress pool address.

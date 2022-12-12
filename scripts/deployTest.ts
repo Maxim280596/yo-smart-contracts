@@ -1,16 +1,5 @@
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
 import { verifyContract } from "./verify";
-// import {
-//   VAULT_ADDRESS,
-//   JUKU7_POOL_ADDRESS,
-//   NETWORK_BUNDLE_ADDRESS,
-//   NETWORK_POOL_ID,
-//   USDC_FTM_POOL_ID,
-//   JUKU_POOL_ID,
-//   WFTM_ADDRESS,
-//   USDC_ADDRESS,
-//   ADMIN_ADDRESS,
-// } from "../test/constants";
 
 const VAULT_ADDRESS = "0x03a859742d854fFe4177601edA79089332bE735F";
 const USDC_ADDRESS = "0x7c4aA5bD1DE539FA8ce0797EEb3D3F9C7fA59936";
@@ -22,19 +11,21 @@ const ROUTER = "0xa6AD18C2aC47803E193F75c3677b14BF19B94883";
 async function main() {
   console.log("Deployment start...");
   const YO = await ethers.getContractFactory("YieldOptimizer");
-  const yo = await YO.deploy(
-    USDC_ADDRESS,
-    JUKU,
-    ADMIN_ADDRESS,
-    VAULT_ADDRESS,
-    ROUTER,
-    2000,
-    3750,
-    2500,
-    3750
+  const yo = await upgrades.deployProxy(
+    YO,
+    [
+      USDC_ADDRESS,
+      JUKU,
+      ADMIN_ADDRESS,
+      VAULT_ADDRESS,
+      ROUTER,
+      2000,
+      3750,
+      2500,
+      3750,
+    ],
+    { initializer: "initialize", kind: "uups" }
   );
-  // const yo = await ethers.getContractAt("YieldOptimizer", YO_ADDRESS);
-
   await yo.deployed();
   console.log(`YO deployed to address:`, yo.address);
   console.log("start adding JUKU7...");
@@ -80,19 +71,9 @@ async function main() {
   console.log("Network bundle is added to YO!");
 
   try {
-    await verifyContract(yo.address, [
-      USDC_ADDRESS,
-      JUKU,
-      ADMIN_ADDRESS,
-      VAULT_ADDRESS,
-      ROUTER,
-      2000,
-      3750,
-      2500,
-      3750,
-    ]);
+    await verifyContract(yo.address, []);
   } catch (err) {
-    console.log("TokenSale verify", err);
+    console.log("YO verify", err);
   }
 }
 

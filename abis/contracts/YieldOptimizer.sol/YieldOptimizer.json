@@ -27,6 +27,7 @@
   "function adminWallet() view returns (address)",
   "function changePoolAllocationType(address,bool)",
   "function defaultAllocations() view returns (uint256, uint256, uint256, uint256)",
+  "function getImplementation() view returns (address)",
   "function getPoolSwapRoutes(address) view returns (bytes32[])",
   "function getPoolTokens(address) view returns (address[])",
   "function getPoolWeights(address) view returns (uint256[])",
