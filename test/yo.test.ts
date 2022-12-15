@@ -33,7 +33,7 @@ describe("Yield Optimizer tests", () => {
   let accounts: SignerWithAddress[];
   let deployer: SignerWithAddress;
   let usdc: any;
-  let yo: YieldOptimizer;
+  let yo: any;
   let batlePool: any;
   let networkBundle: any;
   let latePool: any;
