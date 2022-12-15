@@ -2,6 +2,7 @@ import { expect } from "chai";
 import { ethers, waffle, upgrades } from "hardhat";
 import { vaultAbi } from "./abis/vaultAbi";
 import { weightedPoolAbi } from "./abis/weightedPoolAbi";
+import { YieldOptimizer } from "../typechain-types/contracts/YieldOptimizer";
 import { erc20Abi } from "./abis/erc20Abi";
 import { router } from "./abis/router";
 import {
@@ -32,7 +33,7 @@ describe("Yield Optimizer tests", () => {
   let accounts: SignerWithAddress[];
   let deployer: SignerWithAddress;
   let usdc: any;
-  let yo: any;
+  let yo: YieldOptimizer;
   let batlePool: any;
   let networkBundle: any;
   let latePool: any;
@@ -68,7 +69,7 @@ describe("Yield Optimizer tests", () => {
       []
     );
     const poolID = await juku7.getPoolId();
-    yo = await upgrades.deployProxy(
+    const yoDep: any = await upgrades.deployProxy(
       YO,
       [
         usdc.address,
@@ -84,6 +85,7 @@ describe("Yield Optimizer tests", () => {
       ],
       { initializer: "initialize", kind: "uups" }
     );
+    yo = yoDep;
 
     await yo.addPool(
       "0xdf02adb3cd587da89af29e58de70b840e49490250001000000000000000005b8",
