@@ -13,8 +13,6 @@ import "./interfaces/IVault.sol";
 import "./interfaces/IWeightedPool.sol";
 import "./lib/Errors.sol";
 
-// import "./YieldOptimizerStorage.sol";
-
 contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     IVault.FundManagement private funds;
@@ -61,6 +59,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     address public adminWallet; // contract adminWallet address
     address public vault; // Beethoven X vault address
     address public swapRouter; // swap router address
+    address public revenueRecipient; // treasury revenue recipient
     address[] public pathToJuku; // SwapRoute to Juku token
     mapping(address => Pool) public poolInfo; // Info about pool. See Pool struct.
     mapping(address => mapping(uint256 => Epoch)) public poolRewards; // information about the distribution of rewards in the epoch
@@ -156,6 +155,8 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     event TogglePoolActivity(address pool, bool isActive);
     ////@notice emitted when the pool allocation type is changed
     event UpdatePoolAllocationType(address pool, bool isDefault);
+    ////@notice emitted when the revenue recipient address is changed
+    event UpdateRevenueRecipient(address newRecipient);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -168,6 +169,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address _admin, // admin address
         address _vault, // Beethoven X Vault address
         address _uniRouter, // spookySwap router
+        address _revenueRecipient, // treasury revenue recipient
         uint256 _reinvestedPercent, // default reinvested percent. This argument is separated from the rest of the distribution. Must be from 0 - 10000.
         uint256 _rewardsPercent, // default rewards percent
         uint256 _treasuryPercent, // default treasury revenue percent
@@ -194,6 +196,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         jukuToken = _jukuToken;
         swapRouter = _uniRouter;
         adminWallet = _admin;
+        revenueRecipient = _revenueRecipient;
         pathToJuku = [_usdcToken, _jukuToken];
         funds = IVault.FundManagement(
             address(this),
@@ -468,6 +471,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         pool.currentEpoch = rewardsEpochCounter[poolAddress];
         Epoch storage newEpoch = poolRewards[poolAddress][pool.currentEpoch];
         newEpoch.start = block.timestamp;
+        IERC20Upgradeable(usdcToken).safeTransfer(revenueRecipient, treasury);
 
         emit Harvest(
             poolAddress,
@@ -478,6 +482,17 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
             amounts[1],
             block.timestamp
         );
+    }
+
+    /**
+    @dev The function updates the address that will receive platform revenue.
+    Only the owner or admin can call.
+    @param newRecipient address of revenue recipient
+    */
+    function updateRevenueRecipient(address newRecipient) external onlyOwner {
+        _require(newRecipient != address(0), Errors.ZERO_ADDRESS);
+        revenueRecipient = newRecipient;
+        emit UpdateRevenueRecipient(newRecipient);
     }
 
     /**

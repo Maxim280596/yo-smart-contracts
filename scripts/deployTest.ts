@@ -18,6 +18,7 @@ async function main() {
       ADMIN_ADDRESS,
       VAULT_ADDRESS,
       ROUTER,
+      ADMIN_ADDRESS,
       2000,
       3750,
       2500,

@@ -51,8 +51,8 @@ function _revert(uint256 errorCode) pure {
         errorCode := div(errorCode, 10)
         let hundreds := add(mod(errorCode, 10), 0x30)
 
-        // With the individual characters, we can now construct the full string. The "BAL#" part is a known constant
-        // (0x42414c23): we simply shift this by 24 (to provide space for the 3 bytes of the error code), and add the
+        // With the individual characters, we can now construct the full string. The "YO#" part is a known constant
+        // (0x594f23): we simply shift this by 24 (to provide space for the 3 bytes of the error code), and add the
         // characters to it, each shifted by a multiple of 8.
         // The revert reason is then shifted left by 200 bits (256 minus the length of the string, 7 characters * 8 bits
         // per character = 56) to locate it in the most significant part of the 256 slot (the beginning of a byte
@@ -81,17 +81,42 @@ function _revert(uint256 errorCode) pure {
 }
 
 library Errors {
+    // error if a zero amount is passed
     uint256 internal constant ZERO_AMOUNT = 0;
-    uint256 internal constant ZERO_ADDRESS = 1;
+
+    // error if a zero address is passed
+    uint256 internal constant ZERO_ADDRESS = 1; 
+
+    // error if there are not enough tokens for the operation
     uint256 internal constant NOT_ENOUGH_TOKENS = 2;
+
+    // error in case the pool is inactive
     uint256 internal constant NOT_ACTIVE = 3;
+
+    // error in case there is an attempt to add a pull that has already been added
     uint256 internal constant POOL_IS_ADDED = 4;
+
+    // error if an array with an incorrect length is passed
     uint256 internal constant INVALID_ARRAY_LENGHTS = 5;
+    
+    // error if a function is called on a non-existent pool
     uint256 internal constant POOL_NOT_ADDED = 6;
+
+    // error in case there is an attempt to update the value with the same value
     uint256 internal constant ALREADY_ASSIGNED = 7;
+
+    // error in the case of passing a non-existent array index to the contract
     uint256 internal constant INVALID_INDEX = 8;
+
+    // error in case ftm trasfer failed
     uint256 internal constant FAILED_SENT_ETHER = 9;
+
+    // error in case of calling a method to which it does not have access
     uint256 internal constant ACCESS_IS_DENIED = 10;
+
+    // An error will occur if an incorrect percentage is passed
     uint256 internal constant INVALID_PERCENT = 11;
+
+    // error in the event that the percentages are incorrectly updated
     uint256 internal constant PERCENT_ERROR = 12;
 }

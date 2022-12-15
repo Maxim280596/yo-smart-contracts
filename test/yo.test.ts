@@ -76,6 +76,7 @@ describe("Yield Optimizer tests", () => {
         deployer.address,
         vault.address,
         spookyRouter.address,
+        deployer.address,
         2000,
         3750,
         2500,
@@ -200,6 +201,7 @@ describe("Yield Optimizer tests", () => {
             deployer.address,
             vault.address,
             spookyRouter.address,
+            deployer.address,
             2000,
             3750,
             2500,
@@ -220,6 +222,7 @@ describe("Yield Optimizer tests", () => {
               deployer.address,
               address(0),
               spookyRouter.address,
+              deployer.address,
               2000,
               3750,
               2500,
@@ -241,6 +244,7 @@ describe("Yield Optimizer tests", () => {
               deployer.address,
               vault.address,
               spookyRouter.address,
+              deployer.address,
               20000,
               3750,
               2500,
@@ -261,6 +265,7 @@ describe("Yield Optimizer tests", () => {
               deployer.address,
               vault.address,
               spookyRouter.address,
+              deployer.address,
               2000,
               33750,
               2500,
@@ -284,6 +289,7 @@ describe("Yield Optimizer tests", () => {
             deployer.address,
             vault.address,
             spookyRouter.address,
+            deployer.address,
             2000,
             3750,
             2500,
@@ -603,6 +609,16 @@ describe("Yield Optimizer tests", () => {
         await expect(
           yieldOptimizer.updatePoolSwapRoutes(JUKU7_POOL_ADDRESS, routes)
         ).to.be.revertedWith("YO#005");
+      });
+      it("should update revenue recipient", async () => {
+        await yo.updateRevenueRecipient(accounts[8].address);
+        const newRecipient = await yo.revenueRecipient();
+        expect(newRecipient).to.be.equal(accounts[8].address);
+      });
+      it("shouldrevert update revenue recipient if zero address", async () => {
+        await expect(yo.updateRevenueRecipient(address(0))).to.be.revertedWith(
+          "YO#001"
+        );
       });
     });
     describe("test view methods", async () => {
@@ -1003,6 +1019,7 @@ describe("Yield Optimizer tests", () => {
             deployer.address,
             vault.address,
             spookyRouter.address,
+            deployer.address,
             2000,
             3750,
             2500,
@@ -1158,6 +1175,13 @@ describe("Yield Optimizer tests", () => {
         )
           .to.emit(yieldOptimizerEvents, "UpdatePoolAllocationType")
           .withArgs(LATE_ADDRESS, true);
+      });
+      it("should emit UpdateRevenueRecipient ", async () => {
+        await expect(
+          yieldOptimizerEvents.updateRevenueRecipient(accounts[10].address)
+        )
+          .to.emit(yieldOptimizerEvents, "UpdateRevenueRecipient")
+          .withArgs(accounts[10].address);
       });
     });
   });
