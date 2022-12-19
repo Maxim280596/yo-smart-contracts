@@ -67,16 +67,16 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     //======================================================= Events ========================================================
 
-    ////@notice emitted while tokens are withdrawn from the contract
+    // @notice emitted while tokens are withdrawn from the contract
     event Withdraw(
         address indexed token,
         uint256 indexed amount,
         address indexed user,
         string userId
     );
-    ////@notice emitted when the adminWallet is changed
+    // @notice emitted when the adminWallet is changed
     event UpdateAdminWallet(address newAdmin);
-    ////@notice emitted when the funds are invested in the pool
+    // @notice emitted when the funds are invested in the pool
     event Invest(
         bytes32 poolId,
         address indexed pool,
@@ -85,7 +85,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address user,
         string userId
     );
-    ////@notice emitted when funds are withdrawn from the pool
+    // @notice emitted when funds are withdrawn from the pool
     event WithdrawFromPool(
         bytes32 poolId,
         address indexed pool,
@@ -94,7 +94,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address user,
         string userId
     );
-    ////@notice emitted when the rewards are distributed for the epoch
+    // @notice emitted when the rewards are distributed for the epoch
     event Harvest(
         address pool,
         bytes32 poolId,
@@ -104,35 +104,35 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 rewardsJukuAmount,
         uint256 timestamp
     );
-    ////@notice emitted when a new pull is added
+    // @notice emitted when a new pull is added
     event AddPool(
         address pool,
         bytes32 poolId,
         address[] poolTokens,
         uint256[] poolTokensWeights
     );
-    ////@notice emitted when the pool exit token index is changed
+    // @notice emitted when the pool exit token index is changed
     event UpdatePoolExitTokenIndex(address pool, uint256 exitTokenIndex);
-    ////@notice emitted when the pool deposit type is updated
+    // @notice emitted when the pool deposit type is updated
     event UpdatePoolDepositType(address pool, bool depositType);
-    ////@notice emitted when the pool exit type is updated
+    // @notice emitted when the pool exit type is updated
     event UpdatePoolExitType(address pool, bool exitType);
-    ////@notice emitted when the pool swap routes for pool tokens is changed
+    // @notice emitted when the pool swap routes for pool tokens is changed
     event UpdatePoolSwapRoutes(address pool, bytes32[] swapRoutes);
-    ////@notice emitted when the pool deposit token and swap route for deposit token is changed
+    // @notice emitted when the pool deposit token and swap route for deposit token is changed
     event UpdateDepositTokenSettings(
         address pool,
         bytes32 newSwapRoute,
         address newDepositToken
     );
-    ////@notice emitted when the pool exit token, exit token index and swap route for exit token is changed
+    // @notice emitted when the pool exit token, exit token index and swap route for exit token is changed
     event UpdateExitTokenSettings(
         address pool,
         bytes32 newSwapRoute,
         address newExitToken,
         uint256 exitTokenIndex
     );
-    ////@notice emitted when setting up the individual reward distribution for the pool
+    // @notice emitted when setting up the individual reward distribution for the pool
     event UpdateAllocation(
         address pool,
         uint256 reinvest,
@@ -140,22 +140,22 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 rewards,
         uint256 treasury
     );
-    ////@notice emitted when setting up the default reward distribution
+    // @notice emitted when setting up the default reward distribution
     event UpdateDefaultAllocation(
         uint256 reinvest,
         uint256 commisions,
         uint256 rewards,
         uint256 treasury
     );
-    ////@notice emitted when the address of the swapRouter contract is updated
+    // @notice emitted when the address of the swapRouter contract is updated
     event UpdateSwapRouter(address newSwapRouter);
-    ////@notice emitted when the swap route for juku token is updated
+    // @notice emitted when the swap route for juku token is updated
     event UpdatePathToJuku(address[] newPath);
-    ////@notice emitted when the pool activity changes
+    // @notice emitted when the pool activity changes
     event TogglePoolActivity(address pool, bool isActive);
-    ////@notice emitted when the pool allocation type is changed
+    // @notice emitted when the pool allocation type is changed
     event UpdatePoolAllocationType(address pool, bool isDefault);
-    ////@notice emitted when the revenue recipient address is changed
+    // @notice emitted when the revenue recipient address is changed
     event UpdateRevenueRecipient(address newRecipient);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -163,17 +163,31 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _disableInitializers();
     }
 
+    /**
+    @dev The function plays the role of a constructor and initializes all the variables needed to start the contract.
+    @param _usdcToken USDC token address
+    @param _jukuToken Juku token address
+    @param _admin admin address
+    @param _vault Beethoven X Vault address
+    @param _uniRouter spookySwap router address
+    @param _revenueRecipient treasury revenue recipient
+    @param _reinvestedPercent default reinvested percent. This argument is separated from the rest of the distribution. Must be from 0 - 10000.
+    @param _rewardsPercent default rewards percent
+    @param _treasuryPercent default treasury revenue percent
+    @param _commisionsPercent default commisions percent.
+    _rewardsPercent + _treasuryPercent + _commisionsPercent should be equal 10000.
+    */
     function initialize(
-        address _usdcToken, // USDC token address
-        address _jukuToken, // Juku token address
-        address _admin, // admin address
-        address _vault, // Beethoven X Vault address
-        address _uniRouter, // spookySwap router
-        address _revenueRecipient, // treasury revenue recipient
-        uint256 _reinvestedPercent, // default reinvested percent. This argument is separated from the rest of the distribution. Must be from 0 - 10000.
-        uint256 _rewardsPercent, // default rewards percent
-        uint256 _treasuryPercent, // default treasury revenue percent
-        uint256 _commisionsPercent // default commisions percent._rewardsPercent + _treasuryPercent + _commisionsPercent should be equal 10000.
+        address _usdcToken,
+        address _jukuToken,
+        address _admin,
+        address _vault,
+        address _uniRouter,
+        address _revenueRecipient,
+        uint256 _reinvestedPercent,
+        uint256 _rewardsPercent,
+        uint256 _treasuryPercent,
+        uint256 _commisionsPercent
     ) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -736,6 +750,11 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         emit UpdatePoolSwapRoutes(poolAddress, pool.swapRoutes);
     }
 
+    /** 
+    @dev The function acts as a switch, turning pool activity on and off.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    */
     function togglePoolActivity(address poolAddress)
         external
         onlyAdmin
@@ -759,6 +778,9 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     //======================================================= Public Functions ========================================================
+    /**
+    @dev Public view function returns implementation address.
+    */
     function getImplementation() public view returns (address) {
         address impl = _getImplementation();
         return impl;
