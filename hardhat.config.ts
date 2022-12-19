@@ -53,17 +53,7 @@ const config: HardhatUserConfig = {
             },
           },
         },
-        // evmVersion: "byzantium"
       },
-      // {
-      //   version: "0.7.0",
-      //   settings: {
-      //     optimizer: {
-      //       enabled: true,
-      //       runs: 1,
-      //     },
-      //   },
-      // },
     ],
   },
   networks: {
@@ -71,7 +61,7 @@ const config: HardhatUserConfig = {
       initialBaseFeePerGas: 0,
       chainId: 31337,
       forking: {
-        url: process.env.ETH_MAINNET_URL || "https://rpc.ftm.tools/",
+        url: process.env.FANTOM_MAINNET_URL || "https://rpc.ftm.tools/",
         // The Hardhat network will by default fork from the latest mainnet block
         // To pin the block number, specify it below
         // You will need access to a node with archival data for this to work!

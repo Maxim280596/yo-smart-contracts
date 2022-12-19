@@ -2,7 +2,6 @@ import { expect } from "chai";
 import { ethers, waffle, upgrades } from "hardhat";
 import { vaultAbi } from "./abis/vaultAbi";
 import { weightedPoolAbi } from "./abis/weightedPoolAbi";
-import { YieldOptimizer } from "../typechain-types/contracts/YieldOptimizer";
 import { erc20Abi } from "./abis/erc20Abi";
 import { router } from "./abis/router";
 import {
