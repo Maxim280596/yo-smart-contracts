@@ -322,30 +322,6 @@ describe("Yield Optimizer tests", () => {
           )
         ).to.be.revertedWith("YO#005");
       });
-      // it("should revert add pool if passed zero address", async () => {
-      //   await expect(
-      //     yieldOptimizer.addPool(
-      //       JUKU_POOL_ID,
-      //       address(0),
-      //       usdc.address,
-      //       usdc.address,
-      //       JUKU_POOL_ID,
-      //       JUKU_POOL_ID,
-      //       [
-      //         JUKU_POOL_ID,
-      //         JUKU_POOL_ID,
-      //         JUKU_POOL_ID,
-      //         JUKU_POOL_ID,
-      //         JUKU_POOL_ID,
-      //         JUKU_POOL_ID,
-      //         JUKU_POOL_ID,
-      //       ],
-      //       0,
-      //       true,
-      //       true
-      //     )
-      //   ).to.be.revertedWith("YO#001");
-      // });
       it("should add pool", async () => {
         await yieldOptimizer.addPool(
           JUKU_POOL_ID,
@@ -468,11 +444,6 @@ describe("Yield Optimizer tests", () => {
         const sw = await yieldOptimizer.swapRouter();
         expect(sw).to.be.equal(VAULT_ADDRESS);
       });
-      // it("should revert update swap router if passed zero address", async () => {
-      //   await expect(
-      //     yieldOptimizer.updateSwapRouter(address(0))
-      //   ).to.be.revertedWith("YO#001");
-      // });
       it("should update path to juku", async () => {
         const newPath = [jukuToken.address, usdc.address];
         await yieldOptimizer.updatePathToJuku(newPath);
@@ -512,11 +483,6 @@ describe("Yield Optimizer tests", () => {
           accounts[1].address
         );
       });
-      // it("should revert update admin if passed zero address", async () => {
-      //   await expect(yieldOptimizer.updateAdmin(address(0))).to.be.revertedWith(
-      //     "YO#001"
-      //   );
-      // });
       it("should revert update admin if already added", async () => {
         await expect(
           yieldOptimizer.updateAdmin(accounts[1].address)
@@ -541,16 +507,6 @@ describe("Yield Optimizer tests", () => {
         expect(poolInfo.exitToken).to.be.equal(WFTM_ADDRESS);
         expect(poolInfo.swapRouteForExitToken).to.be.equal(USDC_FTM_POOL_ID);
       });
-      // it("should revert update exit token settings if passed zero address", async () => {
-      //   await expect(
-      //     yieldOptimizer.updateExitTokenSettings(
-      //       JUKU7_POOL_ADDRESS,
-      //       address(0),
-      //       USDC_FTM_POOL_ID,
-      //       1
-      //     )
-      //   ).to.be.revertedWith("YO#001");
-      // });
       it("should revert update exit token settings id passed invalid index", async () => {
         await expect(
           yieldOptimizer.updateExitTokenSettings(
@@ -953,18 +909,84 @@ describe("Yield Optimizer tests", () => {
         ).to.be.revertedWith("BAL#510");
       });
     });
-    describe("should upgrade implementation", async () => {
-      it("upgrade", async () => {
-        const newImplementation = await ethers.getContractFactory(
-          "YieldOptimizerV2"
+    describe("test pausable and emegrency withdraw functionality", async () => {
+      it("should set pause", async () => {
+        await yo.pause();
+        await expect(
+          yo.withdraw(
+            usdc.address,
+            ethers.utils.parseUnits("10", 6),
+            accounts[2].address,
+            "user"
+          )
+        ).to.be.revertedWith("Pausable: paused");
+        await expect(await yo.paused()).to.be.equal(true);
+      });
+      it("should set unpause", async () => {
+        await yo.unPause();
+        await expect(
+          yo.withdraw(
+            usdc.address,
+            ethers.utils.parseUnits("10", 6),
+            accounts[2].address,
+            "user"
+          )
+        ).to.be.not.reverted;
+        await expect(await yo.paused()).to.be.equal(false);
+      });
+      it("should emergencyWithdraw usdc from YO", async () => {
+        await yo.emergencyWithdraw(
+          usdc.address,
+          ethers.utils.parseUnits("10", 6),
+          accounts[15].address
         );
-        yo = await upgrades.upgradeProxy(yo.address, newImplementation);
-        const pool = await yo.poolInfo(JUKU7_POOL_ADDRESS);
-        expect(pool.bptToken).to.be.equal(JUKU7_POOL_ADDRESS);
-        const balance = await yo.usdcBalance();
-        expect(balance).to.be.gt(BigNumber.from("0"));
+        const balance = await usdc.balanceOf(accounts[15].address);
+        expect(balance).to.be.equal(ethers.utils.parseUnits("10", 6));
+      });
+      it("should emergencyWithdraw ftm from yo", async () => {
+        await accounts[1].sendTransaction({
+          to: yo.address,
+          value: ethers.utils.parseEther("10"),
+        });
+        const ftmBalanceBefore = await provider.getBalance(yo.address);
+        const userFtmBalance = await provider.getBalance(accounts[2].address);
+
+        await yo.emergencyWithdraw(
+          address(0),
+          ethers.utils.parseUnits("10", 18),
+          accounts[2].address
+        );
+
+        const userFtmBalanceAfter = await provider.getBalance(
+          accounts[2].address
+        );
+        const ftmBalanceAfter = await provider.getBalance(yo.address);
+
+        expect(ftmBalanceAfter).to.equal(0);
+        expect(userFtmBalanceAfter).to.equal(
+          userFtmBalance.add(ftmBalanceBefore)
+        );
+      });
+      it("should revert emergencyWithdraw if not enough wtm", async () => {
+        await expect(
+          yo.emergencyWithdraw(
+            address(0),
+            ethers.utils.parseUnits("100000000000", 18),
+            accounts[2].address
+          )
+        ).to.be.revertedWith("YO#002");
+      });
+      it("should revert emergencyWithdraw if not enough usdc", async () => {
+        await expect(
+          yo.emergencyWithdraw(
+            usdc.address,
+            ethers.utils.parseUnits("100000000000.0", 6),
+            accounts[2].address
+          )
+        ).to.be.revertedWith("YO#002");
       });
     });
+
     describe("events tests", async () => {
       let yieldOptimizerEvents: any;
 
@@ -1143,81 +1165,16 @@ describe("Yield Optimizer tests", () => {
           .withArgs(accounts[10].address);
       });
     });
-    describe("test pausable and emegrency withdraw functionality", async () => {
-      it("should set pause", async () => {
-        await yo.pause();
-        await expect(
-          yo.withdraw(
-            usdc.address,
-            ethers.utils.parseUnits("10", 6),
-            accounts[2].address,
-            "user"
-          )
-        ).to.be.revertedWith("Pausable: paused");
-        await expect(await yo.paused()).to.be.equal(true);
-      });
-      it("should set unpause", async () => {
-        await yo.unPause();
-        await expect(
-          yo.withdraw(
-            usdc.address,
-            ethers.utils.parseUnits("10", 6),
-            accounts[2].address,
-            "user"
-          )
-        ).to.be.not.reverted;
-        await expect(await yo.paused()).to.be.equal(false);
-      });
-      it("should emergencyWithdraw usdc from YO", async () => {
-        await yo.emergencyWithdraw(
-          usdc.address,
-          ethers.utils.parseUnits("10", 6),
-          accounts[15].address
+    describe("should upgrade implementation", async () => {
+      it("upgrade", async () => {
+        const newImplementation = await ethers.getContractFactory(
+          "YieldOptimizerV2"
         );
-        const balance = await usdc.balanceOf(accounts[15].address);
-        expect(balance).to.be.equal(ethers.utils.parseUnits("10", 6));
-      });
-      it("should emergencyWithdraw ftm from yo", async () => {
-        await accounts[1].sendTransaction({
-          to: yo.address,
-          value: ethers.utils.parseEther("10"),
-        });
-        const ftmBalanceBefore = await provider.getBalance(yo.address);
-        const userFtmBalance = await provider.getBalance(accounts[2].address);
-
-        await yo.emergencyWithdraw(
-          address(0),
-          ethers.utils.parseUnits("10", 18),
-          accounts[2].address
-        );
-
-        const userFtmBalanceAfter = await provider.getBalance(
-          accounts[2].address
-        );
-        const ftmBalanceAfter = await provider.getBalance(yo.address);
-
-        expect(ftmBalanceAfter).to.equal(0);
-        expect(userFtmBalanceAfter).to.equal(
-          userFtmBalance.add(ftmBalanceBefore)
-        );
-      });
-      it("should revert emergencyWithdraw if not enough wtm", async () => {
-        await expect(
-          yo.emergencyWithdraw(
-            address(0),
-            ethers.utils.parseUnits("100000000000", 18),
-            accounts[2].address
-          )
-        ).to.be.revertedWith("YO#002");
-      });
-      it("should revert emergencyWithdraw if not enough usdc", async () => {
-        await expect(
-          yo.emergencyWithdraw(
-            usdc.address,
-            ethers.utils.parseUnits("100000000000.0", 6),
-            accounts[2].address
-          )
-        ).to.be.revertedWith("YO#002");
+        yo = await upgrades.upgradeProxy(yo.address, newImplementation);
+        const pool = await yo.poolInfo(JUKU7_POOL_ADDRESS);
+        expect(pool.bptToken).to.be.equal(JUKU7_POOL_ADDRESS);
+        const balance = await yo.usdcBalance();
+        expect(balance).to.be.gt(BigNumber.from("0"));
       });
     });
   });
