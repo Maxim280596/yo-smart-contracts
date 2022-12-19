@@ -68,7 +68,7 @@ describe("Yield Optimizer tests", () => {
       deployer.address,
       []
     );
-    const poolID = await juku7.getPoolId();
+    const poolID = JUKU_POOL_ID;
     const yoDep: any = await upgrades.deployProxy(
       YO,
       [
