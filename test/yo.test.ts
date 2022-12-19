@@ -322,30 +322,30 @@ describe("Yield Optimizer tests", () => {
           )
         ).to.be.revertedWith("YO#005");
       });
-      it("should revert add pool if passed zero address", async () => {
-        await expect(
-          yieldOptimizer.addPool(
-            JUKU_POOL_ID,
-            address(0),
-            usdc.address,
-            usdc.address,
-            JUKU_POOL_ID,
-            JUKU_POOL_ID,
-            [
-              JUKU_POOL_ID,
-              JUKU_POOL_ID,
-              JUKU_POOL_ID,
-              JUKU_POOL_ID,
-              JUKU_POOL_ID,
-              JUKU_POOL_ID,
-              JUKU_POOL_ID,
-            ],
-            0,
-            true,
-            true
-          )
-        ).to.be.revertedWith("YO#001");
-      });
+      // it("should revert add pool if passed zero address", async () => {
+      //   await expect(
+      //     yieldOptimizer.addPool(
+      //       JUKU_POOL_ID,
+      //       address(0),
+      //       usdc.address,
+      //       usdc.address,
+      //       JUKU_POOL_ID,
+      //       JUKU_POOL_ID,
+      //       [
+      //         JUKU_POOL_ID,
+      //         JUKU_POOL_ID,
+      //         JUKU_POOL_ID,
+      //         JUKU_POOL_ID,
+      //         JUKU_POOL_ID,
+      //         JUKU_POOL_ID,
+      //         JUKU_POOL_ID,
+      //       ],
+      //       0,
+      //       true,
+      //       true
+      //     )
+      //   ).to.be.revertedWith("YO#001");
+      // });
       it("should add pool", async () => {
         await yieldOptimizer.addPool(
           JUKU_POOL_ID,
@@ -468,11 +468,11 @@ describe("Yield Optimizer tests", () => {
         const sw = await yieldOptimizer.swapRouter();
         expect(sw).to.be.equal(VAULT_ADDRESS);
       });
-      it("should revert update swap router if passed zero address", async () => {
-        await expect(
-          yieldOptimizer.updateSwapRouter(address(0))
-        ).to.be.revertedWith("YO#001");
-      });
+      // it("should revert update swap router if passed zero address", async () => {
+      //   await expect(
+      //     yieldOptimizer.updateSwapRouter(address(0))
+      //   ).to.be.revertedWith("YO#001");
+      // });
       it("should update path to juku", async () => {
         const newPath = [jukuToken.address, usdc.address];
         await yieldOptimizer.updatePathToJuku(newPath);
@@ -512,11 +512,11 @@ describe("Yield Optimizer tests", () => {
           accounts[1].address
         );
       });
-      it("should revert update admin if passed zero address", async () => {
-        await expect(yieldOptimizer.updateAdmin(address(0))).to.be.revertedWith(
-          "YO#001"
-        );
-      });
+      // it("should revert update admin if passed zero address", async () => {
+      //   await expect(yieldOptimizer.updateAdmin(address(0))).to.be.revertedWith(
+      //     "YO#001"
+      //   );
+      // });
       it("should revert update admin if already added", async () => {
         await expect(
           yieldOptimizer.updateAdmin(accounts[1].address)
@@ -541,16 +541,16 @@ describe("Yield Optimizer tests", () => {
         expect(poolInfo.exitToken).to.be.equal(WFTM_ADDRESS);
         expect(poolInfo.swapRouteForExitToken).to.be.equal(USDC_FTM_POOL_ID);
       });
-      it("should revert update exit token settings if passed zero address", async () => {
-        await expect(
-          yieldOptimizer.updateExitTokenSettings(
-            JUKU7_POOL_ADDRESS,
-            address(0),
-            USDC_FTM_POOL_ID,
-            1
-          )
-        ).to.be.revertedWith("YO#001");
-      });
+      // it("should revert update exit token settings if passed zero address", async () => {
+      //   await expect(
+      //     yieldOptimizer.updateExitTokenSettings(
+      //       JUKU7_POOL_ADDRESS,
+      //       address(0),
+      //       USDC_FTM_POOL_ID,
+      //       1
+      //     )
+      //   ).to.be.revertedWith("YO#001");
+      // });
       it("should revert update exit token settings id passed invalid index", async () => {
         await expect(
           yieldOptimizer.updateExitTokenSettings(
@@ -570,15 +570,6 @@ describe("Yield Optimizer tests", () => {
         const poolInfo = await yieldOptimizer.poolInfo(JUKU7_POOL_ADDRESS);
         expect(poolInfo.depositToken).to.be.equal(WFTM_ADDRESS);
         expect(poolInfo.swapRouteForDepositToken).to.be.equal(USDC_FTM_POOL_ID);
-      });
-      it("should revert update deposit token settings if passed zero address", async () => {
-        await expect(
-          yieldOptimizer.updateDepositTokenSettings(
-            JUKU7_POOL_ADDRESS,
-            address(0),
-            USDC_FTM_POOL_ID
-          )
-        ).to.be.revertedWith("YO#001");
       });
       it("should update pool swap routes", async () => {
         const routes: string[] = [
@@ -616,39 +607,11 @@ describe("Yield Optimizer tests", () => {
         const newRecipient = await yo.revenueRecipient();
         expect(newRecipient).to.be.equal(accounts[8].address);
       });
-      it("shouldrevert update revenue recipient if zero address", async () => {
-        await expect(yo.updateRevenueRecipient(address(0))).to.be.revertedWith(
-          "YO#001"
-        );
-      });
     });
     describe("test view methods", async () => {
       it("should return implementation address", async () => {
         const impl = await yo.getImplementation();
         expect(impl).to.be.not.equal(address(0));
-      });
-      it("should return pool tokens", async () => {
-        const poolTokens = await yo.getPoolTokens(JUKU7_POOL_ADDRESS);
-        const tokens = [
-          "0x04068DA6C83AFCFA0e13ba15A6696662335D5B75",
-          "0x1E4F97b9f9F913c46F1632781732927B9019C68b",
-          "0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83",
-          "0x321162Cd933E2Be498Cd2267a90534A804051b11",
-          "0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B",
-          "0x74b23882a30290451A17c44f4F05243b6b58C76d",
-          "0xb3654dc3D10Ea7645f8319668E8F54d2574FBdC8",
-        ];
-        for (let i = 0; i <= poolTokens.length - 1; i++) {
-          expect(tokens[i]).to.be.equal(poolTokens[i]);
-        }
-      });
-      it("should return pool tokens weights", async () => {
-        const poolWeights = await yo.getPoolWeights(JUKU7_POOL_ADDRESS);
-        expect(poolWeights.length).to.be.equal(7);
-      });
-      it("should return true if pool is added", async () => {
-        const pool = await yo.poolIsAdded(JUKU7_POOL_ADDRESS);
-        expect(pool).to.be.equal(true);
       });
     });
     describe("invest & exit tests", async () => {
@@ -842,12 +805,7 @@ describe("Yield Optimizer tests", () => {
         const balance = await usdc.balanceOf(accounts[2].address);
         expect(balance).to.be.equal(ethers.utils.parseUnits("10", 6));
       });
-      it("should revert withdraw usdc if zero amount", async () => {
-        await expect(
-          yo.withdraw(usdc.address, 0, accounts[2].address, "user")
-        ).to.be.revertedWith("YO#000");
-      });
-      it("should withdraw frm from yo", async () => {
+      it("should withdraw ftm from yo", async () => {
         await accounts[1].sendTransaction({
           to: yo.address,
           value: ethers.utils.parseEther("10"),
@@ -1183,6 +1141,83 @@ describe("Yield Optimizer tests", () => {
         )
           .to.emit(yieldOptimizerEvents, "UpdateRevenueRecipient")
           .withArgs(accounts[10].address);
+      });
+    });
+    describe("test pausable and emegrency withdraw functionality", async () => {
+      it("should set pause", async () => {
+        await yo.pause();
+        await expect(
+          yo.withdraw(
+            usdc.address,
+            ethers.utils.parseUnits("10", 6),
+            accounts[2].address,
+            "user"
+          )
+        ).to.be.revertedWith("Pausable: paused");
+        await expect(await yo.paused()).to.be.equal(true);
+      });
+      it("should set unpause", async () => {
+        await yo.unPause();
+        await expect(
+          yo.withdraw(
+            usdc.address,
+            ethers.utils.parseUnits("10", 6),
+            accounts[2].address,
+            "user"
+          )
+        ).to.be.not.reverted;
+        await expect(await yo.paused()).to.be.equal(false);
+      });
+      it("should emergencyWithdraw usdc from YO", async () => {
+        await yo.emergencyWithdraw(
+          usdc.address,
+          ethers.utils.parseUnits("10", 6),
+          accounts[15].address
+        );
+        const balance = await usdc.balanceOf(accounts[15].address);
+        expect(balance).to.be.equal(ethers.utils.parseUnits("10", 6));
+      });
+      it("should emergencyWithdraw ftm from yo", async () => {
+        await accounts[1].sendTransaction({
+          to: yo.address,
+          value: ethers.utils.parseEther("10"),
+        });
+        const ftmBalanceBefore = await provider.getBalance(yo.address);
+        const userFtmBalance = await provider.getBalance(accounts[2].address);
+
+        await yo.emergencyWithdraw(
+          address(0),
+          ethers.utils.parseUnits("10", 18),
+          accounts[2].address
+        );
+
+        const userFtmBalanceAfter = await provider.getBalance(
+          accounts[2].address
+        );
+        const ftmBalanceAfter = await provider.getBalance(yo.address);
+
+        expect(ftmBalanceAfter).to.equal(0);
+        expect(userFtmBalanceAfter).to.equal(
+          userFtmBalance.add(ftmBalanceBefore)
+        );
+      });
+      it("should revert emergencyWithdraw if not enough wtm", async () => {
+        await expect(
+          yo.emergencyWithdraw(
+            address(0),
+            ethers.utils.parseUnits("100000000000", 18),
+            accounts[2].address
+          )
+        ).to.be.revertedWith("YO#002");
+      });
+      it("should revert emergencyWithdraw if not enough usdc", async () => {
+        await expect(
+          yo.emergencyWithdraw(
+            usdc.address,
+            ethers.utils.parseUnits("100000000000.0", 6),
+            accounts[2].address
+          )
+        ).to.be.revertedWith("YO#002");
       });
     });
   });

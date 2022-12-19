@@ -6,14 +6,19 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "./interfaces/IVault.sol";
 import "./interfaces/IWeightedPool.sol";
 import "./lib/Errors.sol";
 
-contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract YieldOptimizer is
+    Initializable,
+    OwnableUpgradeable,
+    UUPSUpgradeable,
+    PausableUpgradeable
+{
     using SafeERC20Upgradeable for IERC20Upgradeable;
     IVault.FundManagement private funds;
     Allocations public defaultAllocations;
@@ -191,6 +196,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     ) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
+        __Pausable_init();
         _require(
             _vault != address(0) &&
                 _admin != address(0) &&
@@ -280,7 +286,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 amount,
         address user,
         string calldata userId
-    ) external onlyAdmin {
+    ) external onlyAdmin whenNotPaused {
         _withdraw(token, amount, user, userId);
     }
 
@@ -297,7 +303,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 amount,
         address user,
         string memory userId
-    ) external onlyAdmin isActive(poolAddress) {
+    ) external onlyAdmin isActive(poolAddress) whenNotPaused {
         _require(
             IERC20Upgradeable(usdcToken).balanceOf(address(this)) >= amount,
             Errors.NOT_ENOUGH_TOKENS
@@ -339,7 +345,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 amount,
         address user,
         string memory userId
-    ) external onlyAdmin isActive(poolAddress) {
+    ) external onlyAdmin isActive(poolAddress) whenNotPaused {
         Pool storage pool = poolInfo[poolAddress];
         _require(
             IERC20Upgradeable(pool.bptToken).balanceOf(address(this)) >= amount,
@@ -383,7 +389,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 _exitTokenIndex,
         bool _isDepositInOneToken,
         bool _isExitInOneToken
-    ) external onlyAdmin {
+    ) external onlyAdmin whenNotPaused {
         Pool storage pool = poolInfo[_poolAddress];
         _require(pool.bptToken == address(0), Errors.POOL_IS_ADDED);
 
@@ -393,12 +399,6 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         _require(
             _swapRoutes.length == poolTokens.length,
             Errors.INVALID_ARRAY_LENGHTS
-        );
-        _require(
-            _depositToken != address(0) &&
-                _poolAddress != address(0) &&
-                _exitToken != address(0),
-            Errors.ZERO_ADDRESS
         );
 
         pool.tokens = poolTokens;
@@ -444,6 +444,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         external
         onlyAdmin
         isActive(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(
@@ -503,8 +504,11 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     Only the owner or admin can call.
     @param newRecipient address of revenue recipient
     */
-    function updateRevenueRecipient(address newRecipient) external onlyOwner {
-        _require(newRecipient != address(0), Errors.ZERO_ADDRESS);
+    function updateRevenueRecipient(address newRecipient)
+        external
+        onlyOwner
+        whenNotPaused
+    {
         revenueRecipient = newRecipient;
         emit UpdateRevenueRecipient(newRecipient);
     }
@@ -526,7 +530,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 commisions,
         uint256 rewards,
         uint256 treasury
-    ) external onlyAdmin isAdded(poolAddress) {
+    ) external onlyAdmin isAdded(poolAddress) whenNotPaused {
         _require(
             commisions + rewards + treasury == PRECISSION,
             Errors.INVALID_PERCENT
@@ -562,7 +566,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         uint256 commisions,
         uint256 rewards,
         uint256 treasury
-    ) external onlyAdmin {
+    ) external onlyAdmin whenNotPaused {
         _require(
             commisions + rewards + treasury == PRECISSION,
             Errors.INVALID_PERCENT
@@ -586,6 +590,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(
@@ -607,8 +612,11 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     @dev The function updates the swap router address
     @param newSwapRouter new swap router adrress
     */
-    function updateSwapRouter(address newSwapRouter) external onlyAdmin {
-        _require(newSwapRouter != address(0), Errors.ZERO_ADDRESS);
+    function updateSwapRouter(address newSwapRouter)
+        external
+        onlyAdmin
+        whenNotPaused
+    {
         swapRouter = newSwapRouter;
         emit UpdateSwapRouter(newSwapRouter);
     }
@@ -617,7 +625,11 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     @dev The function updates path to juku
     @param newPath new swap route for juku
     */
-    function updatePathToJuku(address[] memory newPath) external onlyAdmin {
+    function updatePathToJuku(address[] memory newPath)
+        external
+        onlyAdmin
+        whenNotPaused
+    {
         pathToJuku = newPath;
         emit UpdatePathToJuku(newPath);
     }
@@ -632,6 +644,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(exitIndex < pool.tokens.length, Errors.INVALID_INDEX);
@@ -649,6 +662,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(
@@ -669,6 +683,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(
@@ -690,9 +705,8 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address poolAddress,
         address depositTokenAddress,
         bytes32 newSwapRoute
-    ) external onlyAdmin isAdded(poolAddress) {
+    ) external onlyAdmin isAdded(poolAddress) whenNotPaused {
         Pool storage pool = poolInfo[poolAddress];
-        _require(depositTokenAddress != address(0), Errors.ZERO_ADDRESS);
         pool.depositToken = depositTokenAddress;
         pool.swapRouteForDepositToken = newSwapRoute;
         emit UpdateDepositTokenSettings(
@@ -716,10 +730,9 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address exitTokenAddress,
         bytes32 newSwapRoute,
         uint256 exitIndex
-    ) external onlyAdmin isAdded(poolAddress) {
+    ) external onlyAdmin isAdded(poolAddress) whenNotPaused {
         Pool storage pool = poolInfo[poolAddress];
         _require(exitIndex < pool.tokens.length, Errors.INVALID_INDEX);
-        _require(exitTokenAddress != address(0), Errors.ZERO_ADDRESS);
         pool.exitToken = exitTokenAddress;
         pool.exitTokenIndex = exitIndex;
         pool.swapRouteForExitToken = newSwapRoute;
@@ -740,7 +753,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     function updatePoolSwapRoutes(
         address poolAddress,
         bytes32[] memory newSwapRoutes
-    ) external onlyAdmin isAdded(poolAddress) {
+    ) external onlyAdmin isAdded(poolAddress) whenNotPaused {
         Pool storage pool = poolInfo[poolAddress];
         _require(
             newSwapRoutes.length == pool.tokens.length,
@@ -759,6 +772,7 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         pool.isActive = !pool.isActive;
@@ -770,11 +784,42 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     Only the owner can call.
     @param newAdmin new admin wallet address.
     */
-    function updateAdmin(address newAdmin) external onlyOwner {
-        _require(newAdmin != address(0), Errors.ZERO_ADDRESS);
+    function updateAdmin(address newAdmin) external onlyOwner whenNotPaused {
         _require(newAdmin != adminWallet, Errors.ALREADY_ASSIGNED);
         adminWallet = newAdmin;
         emit UpdateAdminWallet(newAdmin);
+    }
+
+    /** 
+    @dev The function enables a pause on the contract in case the contract is hacked.
+    Methods that use the whenNotPaused modifier will not work.
+    Only the owner can call.
+    */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    /** 
+    @dev The function turns off the pause, the contract returns to the normal working state
+    Only the owner can call.
+    */
+    function unPause() external onlyOwner {
+        _unpause();
+    }
+
+    /**
+    @dev External function for emergency withdrawing tokens from the YO.
+    Only the owner or admin can call.
+    @param token token address.
+    @param amount withdraw token amount.
+    @param recipient recipient wallet address.
+    */
+    function emergencyWithdraw(
+        address token,
+        uint256 amount,
+        address recipient
+    ) external onlyOwner {
+        _withdraw(token, amount, recipient, "");
     }
 
     //======================================================= Public Functions ========================================================
@@ -787,59 +832,16 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     }
 
     /**
-    @dev Public view function returns true if pool is added to YO or false if not added.
-    @param poolAddress pool address.
-    */
-    function poolIsAdded(address poolAddress)
-        external
-        view
-        isAdded(poolAddress)
-        returns (bool)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return poolAddress == pool.bptToken;
-    }
-
-    /**
     @dev Public view function returns swap routes for pool tokens.
     @param poolAddress pool address.
     */
     function getPoolSwapRoutes(address poolAddress)
         external
         view
-        isAdded(poolAddress)
         returns (bytes32[] memory)
     {
         Pool storage pool = poolInfo[poolAddress];
         return pool.swapRoutes;
-    }
-
-    /**
-    @dev Public view function returns tokens weights in the pool.
-    @param poolAddress pool address.
-    */
-    function getPoolWeights(address poolAddress)
-        external
-        view
-        isAdded(poolAddress)
-        returns (uint256[] memory)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return pool.tokensWeights;
-    }
-
-    /**
-    // @dev Public view function returns pool tokensl.
-    // @param poolAddress pool address.
-    // */
-    function getPoolTokens(address poolAddress)
-        external
-        view
-        isAdded(poolAddress)
-        returns (address[] memory)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return pool.tokens;
     }
 
     //======================================================= Internal Functions ========================================================
@@ -857,7 +859,6 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         address user,
         string memory userId
     ) internal {
-        _require(amount > 0, Errors.ZERO_AMOUNT);
         if (token == address(0)) {
             _require(address(this).balance >= amount, Errors.NOT_ENOUGH_TOKENS);
             (bool sent, ) = user.call{value: amount}("");
@@ -1195,7 +1196,6 @@ contract YieldOptimizer is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     ) internal returns (uint256) {
         IVault.SingleSwap memory singleSwap = IVault.SingleSwap(
             _poolId,
-            // swapKind,
             IVault.SwapKind.GIVEN_IN,
             _tokenIn,
             _tokenOut,

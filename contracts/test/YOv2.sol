@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "../interfaces/IUniswapV2Router.sol";
@@ -16,7 +17,8 @@ import "../lib/Errors.sol";
 contract YieldOptimizerV2 is
     Initializable,
     OwnableUpgradeable,
-    UUPSUpgradeable
+    UUPSUpgradeable,
+    PausableUpgradeable
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     IVault.FundManagement private funds;
@@ -71,16 +73,16 @@ contract YieldOptimizerV2 is
 
     //======================================================= Events ========================================================
 
-    ////@notice emitted while tokens are withdrawn from the contract
+    // @notice emitted while tokens are withdrawn from the contract
     event Withdraw(
         address indexed token,
         uint256 indexed amount,
         address indexed user,
         string userId
     );
-    ////@notice emitted when the adminWallet is changed
+    // @notice emitted when the adminWallet is changed
     event UpdateAdminWallet(address newAdmin);
-    ////@notice emitted when the funds are invested in the pool
+    // @notice emitted when the funds are invested in the pool
     event Invest(
         bytes32 poolId,
         address indexed pool,
@@ -89,7 +91,7 @@ contract YieldOptimizerV2 is
         address user,
         string userId
     );
-    ////@notice emitted when funds are withdrawn from the pool
+    // @notice emitted when funds are withdrawn from the pool
     event WithdrawFromPool(
         bytes32 poolId,
         address indexed pool,
@@ -98,7 +100,7 @@ contract YieldOptimizerV2 is
         address user,
         string userId
     );
-    ////@notice emitted when the rewards are distributed for the epoch
+    // @notice emitted when the rewards are distributed for the epoch
     event Harvest(
         address pool,
         bytes32 poolId,
@@ -108,35 +110,35 @@ contract YieldOptimizerV2 is
         uint256 rewardsJukuAmount,
         uint256 timestamp
     );
-    ////@notice emitted when a new pull is added
+    // @notice emitted when a new pull is added
     event AddPool(
         address pool,
         bytes32 poolId,
         address[] poolTokens,
         uint256[] poolTokensWeights
     );
-    ////@notice emitted when the pool exit token index is changed
+    // @notice emitted when the pool exit token index is changed
     event UpdatePoolExitTokenIndex(address pool, uint256 exitTokenIndex);
-    ////@notice emitted when the pool deposit type is updated
+    // @notice emitted when the pool deposit type is updated
     event UpdatePoolDepositType(address pool, bool depositType);
-    ////@notice emitted when the pool exit type is updated
+    // @notice emitted when the pool exit type is updated
     event UpdatePoolExitType(address pool, bool exitType);
-    ////@notice emitted when the pool swap routes for pool tokens is changed
+    // @notice emitted when the pool swap routes for pool tokens is changed
     event UpdatePoolSwapRoutes(address pool, bytes32[] swapRoutes);
-    ////@notice emitted when the pool deposit token and swap route for deposit token is changed
+    // @notice emitted when the pool deposit token and swap route for deposit token is changed
     event UpdateDepositTokenSettings(
         address pool,
         bytes32 newSwapRoute,
         address newDepositToken
     );
-    ////@notice emitted when the pool exit token, exit token index and swap route for exit token is changed
+    // @notice emitted when the pool exit token, exit token index and swap route for exit token is changed
     event UpdateExitTokenSettings(
         address pool,
         bytes32 newSwapRoute,
         address newExitToken,
         uint256 exitTokenIndex
     );
-    ////@notice emitted when setting up the individual reward distribution for the pool
+    // @notice emitted when setting up the individual reward distribution for the pool
     event UpdateAllocation(
         address pool,
         uint256 reinvest,
@@ -144,21 +146,22 @@ contract YieldOptimizerV2 is
         uint256 rewards,
         uint256 treasury
     );
-    ////@notice emitted when setting up the default reward distribution
+    // @notice emitted when setting up the default reward distribution
     event UpdateDefaultAllocation(
         uint256 reinvest,
         uint256 commisions,
         uint256 rewards,
         uint256 treasury
     );
-    ////@notice emitted when the address of the swapRouter contract is updated
+    // @notice emitted when the address of the swapRouter contract is updated
     event UpdateSwapRouter(address newSwapRouter);
-    ////@notice emitted when the swap route for juku token is updated
+    // @notice emitted when the swap route for juku token is updated
     event UpdatePathToJuku(address[] newPath);
-    ////@notice emitted when the pool activity changes
+    // @notice emitted when the pool activity changes
     event TogglePoolActivity(address pool, bool isActive);
-    ////@notice emitted when the pool allocation type is changed
+    // @notice emitted when the pool allocation type is changed
     event UpdatePoolAllocationType(address pool, bool isDefault);
+    // @notice emitted when the revenue recipient address is changed
     event UpdateRevenueRecipient(address newRecipient);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -166,20 +169,35 @@ contract YieldOptimizerV2 is
         _disableInitializers();
     }
 
+    /**
+    @dev The function plays the role of a constructor and initializes all the variables needed to start the contract.
+    @param _usdcToken USDC token address
+    @param _jukuToken Juku token address
+    @param _admin admin address
+    @param _vault Beethoven X Vault address
+    @param _uniRouter spookySwap router address
+    @param _revenueRecipient treasury revenue recipient
+    @param _reinvestedPercent default reinvested percent. This argument is separated from the rest of the distribution. Must be from 0 - 10000.
+    @param _rewardsPercent default rewards percent
+    @param _treasuryPercent default treasury revenue percent
+    @param _commisionsPercent default commisions percent.
+    _rewardsPercent + _treasuryPercent + _commisionsPercent should be equal 10000.
+    */
     function initialize(
-        address _usdcToken, // USDC token address
-        address _jukuToken, // Juku token address
-        address _admin, // admin address
-        address _vault, // Beethoven X Vault address
-        address _uniRouter, // spookySwap router
-        address _revenueRecipient, // treasury revenue recipient
-        uint256 _reinvestedPercent, // default reinvested percent. This argument is separated from the rest of the distribution. Must be from 0 - 10000.
-        uint256 _rewardsPercent, // default rewards percent
-        uint256 _treasuryPercent, // default treasury revenue percent
-        uint256 _commisionsPercent // default commisions percent._rewardsPercent + _treasuryPercent + _commisionsPercent should be equal 10000.
+        address _usdcToken,
+        address _jukuToken,
+        address _admin,
+        address _vault,
+        address _uniRouter,
+        address _revenueRecipient,
+        uint256 _reinvestedPercent,
+        uint256 _rewardsPercent,
+        uint256 _treasuryPercent,
+        uint256 _commisionsPercent
     ) external initializer {
         __Ownable_init();
         __UUPSUpgradeable_init();
+        __Pausable_init();
         _require(
             _vault != address(0) &&
                 _admin != address(0) &&
@@ -269,7 +287,7 @@ contract YieldOptimizerV2 is
         uint256 amount,
         address user,
         string calldata userId
-    ) external onlyAdmin {
+    ) external onlyAdmin whenNotPaused {
         _withdraw(token, amount, user, userId);
     }
 
@@ -286,7 +304,7 @@ contract YieldOptimizerV2 is
         uint256 amount,
         address user,
         string memory userId
-    ) external onlyAdmin isActive(poolAddress) {
+    ) external onlyAdmin isActive(poolAddress) whenNotPaused {
         _require(
             IERC20Upgradeable(usdcToken).balanceOf(address(this)) >= amount,
             Errors.NOT_ENOUGH_TOKENS
@@ -328,7 +346,7 @@ contract YieldOptimizerV2 is
         uint256 amount,
         address user,
         string memory userId
-    ) external onlyAdmin isActive(poolAddress) {
+    ) external onlyAdmin isActive(poolAddress) whenNotPaused {
         Pool storage pool = poolInfo[poolAddress];
         _require(
             IERC20Upgradeable(pool.bptToken).balanceOf(address(this)) >= amount,
@@ -372,7 +390,7 @@ contract YieldOptimizerV2 is
         uint256 _exitTokenIndex,
         bool _isDepositInOneToken,
         bool _isExitInOneToken
-    ) external onlyAdmin {
+    ) external onlyAdmin whenNotPaused {
         Pool storage pool = poolInfo[_poolAddress];
         _require(pool.bptToken == address(0), Errors.POOL_IS_ADDED);
 
@@ -382,12 +400,6 @@ contract YieldOptimizerV2 is
         _require(
             _swapRoutes.length == poolTokens.length,
             Errors.INVALID_ARRAY_LENGHTS
-        );
-        _require(
-            _depositToken != address(0) &&
-                _poolAddress != address(0) &&
-                _exitToken != address(0),
-            Errors.ZERO_ADDRESS
         );
 
         pool.tokens = poolTokens;
@@ -433,6 +445,7 @@ contract YieldOptimizerV2 is
         external
         onlyAdmin
         isActive(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(
@@ -487,8 +500,16 @@ contract YieldOptimizerV2 is
         );
     }
 
-    function updateRevenueRecipient(address newRecipient) external onlyOwner {
-        _require(newRecipient != address(0), Errors.ZERO_ADDRESS);
+    /**
+    @dev The function updates the address that will receive platform revenue.
+    Only the owner or admin can call.
+    @param newRecipient address of revenue recipient
+    */
+    function updateRevenueRecipient(address newRecipient)
+        external
+        onlyOwner
+        whenNotPaused
+    {
         revenueRecipient = newRecipient;
         emit UpdateRevenueRecipient(newRecipient);
     }
@@ -510,7 +531,7 @@ contract YieldOptimizerV2 is
         uint256 commisions,
         uint256 rewards,
         uint256 treasury
-    ) external onlyAdmin isAdded(poolAddress) {
+    ) external onlyAdmin isAdded(poolAddress) whenNotPaused {
         _require(
             commisions + rewards + treasury == PRECISSION,
             Errors.INVALID_PERCENT
@@ -546,7 +567,7 @@ contract YieldOptimizerV2 is
         uint256 commisions,
         uint256 rewards,
         uint256 treasury
-    ) external onlyAdmin {
+    ) external onlyAdmin whenNotPaused {
         _require(
             commisions + rewards + treasury == PRECISSION,
             Errors.INVALID_PERCENT
@@ -570,6 +591,7 @@ contract YieldOptimizerV2 is
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(
@@ -591,8 +613,11 @@ contract YieldOptimizerV2 is
     @dev The function updates the swap router address
     @param newSwapRouter new swap router adrress
     */
-    function updateSwapRouter(address newSwapRouter) external onlyAdmin {
-        _require(newSwapRouter != address(0), Errors.ZERO_ADDRESS);
+    function updateSwapRouter(address newSwapRouter)
+        external
+        onlyAdmin
+        whenNotPaused
+    {
         swapRouter = newSwapRouter;
         emit UpdateSwapRouter(newSwapRouter);
     }
@@ -601,7 +626,11 @@ contract YieldOptimizerV2 is
     @dev The function updates path to juku
     @param newPath new swap route for juku
     */
-    function updatePathToJuku(address[] memory newPath) external onlyAdmin {
+    function updatePathToJuku(address[] memory newPath)
+        external
+        onlyAdmin
+        whenNotPaused
+    {
         pathToJuku = newPath;
         emit UpdatePathToJuku(newPath);
     }
@@ -616,6 +645,7 @@ contract YieldOptimizerV2 is
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(exitIndex < pool.tokens.length, Errors.INVALID_INDEX);
@@ -633,6 +663,7 @@ contract YieldOptimizerV2 is
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(
@@ -653,6 +684,7 @@ contract YieldOptimizerV2 is
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         _require(
@@ -674,9 +706,8 @@ contract YieldOptimizerV2 is
         address poolAddress,
         address depositTokenAddress,
         bytes32 newSwapRoute
-    ) external onlyAdmin isAdded(poolAddress) {
+    ) external onlyAdmin isAdded(poolAddress) whenNotPaused {
         Pool storage pool = poolInfo[poolAddress];
-        _require(depositTokenAddress != address(0), Errors.ZERO_ADDRESS);
         pool.depositToken = depositTokenAddress;
         pool.swapRouteForDepositToken = newSwapRoute;
         emit UpdateDepositTokenSettings(
@@ -700,10 +731,9 @@ contract YieldOptimizerV2 is
         address exitTokenAddress,
         bytes32 newSwapRoute,
         uint256 exitIndex
-    ) external onlyAdmin isAdded(poolAddress) {
+    ) external onlyAdmin isAdded(poolAddress) whenNotPaused {
         Pool storage pool = poolInfo[poolAddress];
         _require(exitIndex < pool.tokens.length, Errors.INVALID_INDEX);
-        _require(exitTokenAddress != address(0), Errors.ZERO_ADDRESS);
         pool.exitToken = exitTokenAddress;
         pool.exitTokenIndex = exitIndex;
         pool.swapRouteForExitToken = newSwapRoute;
@@ -724,7 +754,7 @@ contract YieldOptimizerV2 is
     function updatePoolSwapRoutes(
         address poolAddress,
         bytes32[] memory newSwapRoutes
-    ) external onlyAdmin isAdded(poolAddress) {
+    ) external onlyAdmin isAdded(poolAddress) whenNotPaused {
         Pool storage pool = poolInfo[poolAddress];
         _require(
             newSwapRoutes.length == pool.tokens.length,
@@ -734,10 +764,16 @@ contract YieldOptimizerV2 is
         emit UpdatePoolSwapRoutes(poolAddress, pool.swapRoutes);
     }
 
+    /** 
+    @dev The function acts as a switch, turning pool activity on and off.
+    Only the owner or admin can call.
+    @param poolAddress pool address.
+    */
     function togglePoolActivity(address poolAddress)
         external
         onlyAdmin
         isAdded(poolAddress)
+        whenNotPaused
     {
         Pool storage pool = poolInfo[poolAddress];
         pool.isActive = !pool.isActive;
@@ -749,63 +785,39 @@ contract YieldOptimizerV2 is
     Only the owner can call.
     @param newAdmin new admin wallet address.
     */
-    function updateAdmin(address newAdmin) external onlyOwner {
-        _require(newAdmin != address(0), Errors.ZERO_ADDRESS);
+    function updateAdmin(address newAdmin) external onlyOwner whenNotPaused {
         _require(newAdmin != adminWallet, Errors.ALREADY_ASSIGNED);
         adminWallet = newAdmin;
         emit UpdateAdminWallet(newAdmin);
     }
 
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unPause() external onlyOwner {
+        _unpause();
+    }
+
+    function emergencyWithdraw(
+        address token,
+        uint256 amount,
+        address recipient
+    ) external onlyOwner {
+        _withdraw(token, amount, recipient, "");
+    }
+
     //======================================================= Public Functions ========================================================
+    /**
+    @dev Public view function returns implementation address.
+    */
     function getImplementation() public view returns (address) {
         address impl = _getImplementation();
         return impl;
     }
 
-    /**
-    @dev Public view function returns true if pool is added to YO or false if not added.
-    @param poolAddress pool address.
-    */
-    function poolIsAdded(address poolAddress)
-        external
-        view
-        isAdded(poolAddress)
-        returns (bool)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return poolAddress == pool.bptToken;
-    }
-
     function usdcBalance() public view returns (uint256) {
-        return IERC20Upgradeable(usdcToken).balanceOf(address(this));
-    }
-
-    /**
-    @dev Public view function returns tokens weights in the pool.
-    @param poolAddress pool address.
-    */
-    function getPoolWeights(address poolAddress)
-        external
-        view
-        isAdded(poolAddress)
-        returns (uint256[] memory)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return pool.tokensWeights;
-    }
-
-    /**
-    // @dev Public view function returns pool tokensl.
-    // @param poolAddress pool address.
-    // */
-    function getPoolTokens(address poolAddress)
-        external
-        view
-        isAdded(poolAddress)
-        returns (address[] memory)
-    {
-        Pool storage pool = poolInfo[poolAddress];
-        return pool.tokens;
+        return IERC20(usdcToken).balanceOf(address(this));
     }
 
     //======================================================= Internal Functions ========================================================
@@ -823,7 +835,6 @@ contract YieldOptimizerV2 is
         address user,
         string memory userId
     ) internal {
-        _require(amount > 0, Errors.ZERO_AMOUNT);
         if (token == address(0)) {
             _require(address(this).balance >= amount, Errors.NOT_ENOUGH_TOKENS);
             (bool sent, ) = user.call{value: amount}("");
@@ -1161,7 +1172,6 @@ contract YieldOptimizerV2 is
     ) internal returns (uint256) {
         IVault.SingleSwap memory singleSwap = IVault.SingleSwap(
             _poolId,
-            // swapKind,
             IVault.SwapKind.GIVEN_IN,
             _tokenIn,
             _tokenOut,
