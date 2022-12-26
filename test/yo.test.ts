@@ -438,19 +438,26 @@ describe("Yield Optimizer tests", () => {
           )
         ).to.be.revertedWith("YO#011");
       });
-
-      it("should update swapRouter", async () => {
-        await yieldOptimizer.updateSwapRouter(VAULT_ADDRESS);
-        const sw = await yieldOptimizer.swapRouter();
-        expect(sw).to.be.equal(VAULT_ADDRESS);
+      it("should set staking", async () => {
+        await yo.setStaking(accounts[5].address);
+        const staking = await yo.staking();
+        expect(staking).to.be.equal(accounts[5].address);
       });
-      it("should update path to juku", async () => {
-        const newPath = [jukuToken.address, usdc.address];
-        await yieldOptimizer.updatePathToJuku(newPath);
-        const token1 = await yieldOptimizer.pathToJuku(0);
-        const token2 = await yieldOptimizer.pathToJuku(1);
-        expect(newPath[0]).to.be.equal(token1);
-        expect(newPath[1]).to.be.equal(token2);
+      it("should replenish staking", async () => {
+        const userbalanceBefore = await usdc.balanceOf(accounts[5].address);
+        const yoBalanceBefore = await usdc.balanceOf(yo.address);
+        await yo.replenishStaking(
+          usdc.address,
+          ethers.utils.parseUnits("1", 6)
+        );
+        const userbalanceAfter = await usdc.balanceOf(accounts[5].address);
+        const yoBalanceAfter = await usdc.balanceOf(yo.address);
+        expect(
+          userbalanceBefore.add(ethers.utils.parseUnits("1", 6))
+        ).to.be.equal(userbalanceAfter);
+        expect(
+          yoBalanceBefore.sub(ethers.utils.parseUnits("1", 6))
+        ).to.be.equal(yoBalanceAfter);
       });
       it("should revert update pool deposit type if type already assigned", async () => {
         await expect(

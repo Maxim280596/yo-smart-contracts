@@ -11,6 +11,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "./interfaces/IUniswapV2Router.sol";
 import "./interfaces/IVault.sol";
 import "./interfaces/IWeightedPool.sol";
+import "./interfaces/IYieldOptimizerStaking.sol";
 import "./lib/Errors.sol";
 
 contract YieldOptimizer is
@@ -65,6 +66,7 @@ contract YieldOptimizer is
     address public vault; // Beethoven X vault address
     address public swapRouter; // swap router address
     address public revenueRecipient; // treasury revenue recipient
+    address public staking; // staking USDX/JUKU address
     address[] public pathToJuku; // SwapRoute to Juku token
     mapping(address => Pool) public poolInfo; // Info about pool. See Pool struct.
     mapping(address => mapping(uint256 => Epoch)) public poolRewards; // information about the distribution of rewards in the epoch
@@ -152,16 +154,18 @@ contract YieldOptimizer is
         uint256 rewards,
         uint256 treasury
     );
-    // @notice emitted when the address of the swapRouter contract is updated
-    event UpdateSwapRouter(address newSwapRouter);
-    // @notice emitted when the swap route for juku token is updated
-    event UpdatePathToJuku(address[] newPath);
     // @notice emitted when the pool activity changes
     event TogglePoolActivity(address pool, bool isActive);
     // @notice emitted when the pool allocation type is changed
     event UpdatePoolAllocationType(address pool, bool isDefault);
     // @notice emitted when the revenue recipient address is changed
     event UpdateRevenueRecipient(address newRecipient);
+    // @notice emitted when the when called emergencyWithdraw
+    event EmergencyWithdraw(address token, uint256 amount, address recipient);
+    // @notice emitted when the when called replenishStaking
+    event ReplenishStaking(address token, uint256 amount, address staking);
+    // @notice emitted when the staking address setted or updated
+    event SetStaking(address newStaking);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -251,6 +255,17 @@ contract YieldOptimizer is
         );
         _;
     }
+    /**
+    @dev The modifier checks whether the caller of the method 
+    is an staking Smart Contract.
+    */
+    modifier onlyStaking() {
+        _require(
+            msg.sender == staking || msg.sender == owner(),
+            Errors.ACCESS_IS_DENIED
+        );
+        _;
+    }
 
     /**
     @dev The modifier checks if the pool is currently active
@@ -287,7 +302,8 @@ contract YieldOptimizer is
         address user,
         string calldata userId
     ) external onlyAdmin whenNotPaused {
-        _withdraw(token, amount, user, userId);
+        _withdraw(token, amount, user);
+        emit Withdraw(token, amount, user, userId);
     }
 
     /**
@@ -500,6 +516,32 @@ contract YieldOptimizer is
     }
 
     /**
+    @dev The function replenishes the setting contract. 
+    The staking contract before each invest, withdraw and harvest calls it
+    Only the staking smart contract can call.
+    @param token replenish token address
+    @param amount replenish token amount
+    */
+    function replenishStaking(address token, uint256 amount)
+        external
+        onlyStaking
+        whenNotPaused
+    {
+        _withdraw(token, amount, staking);
+        emit ReplenishStaking(token, amount, staking);
+    }
+
+    /**
+    @dev The function updates the address of the staking smart contract
+    Only the owner or admin can call.
+    @param newStaking new staking address
+    */
+    function setStaking(address newStaking) external onlyAdmin {
+        staking = newStaking;
+        emit SetStaking(newStaking);
+    }
+
+    /**
     @dev The function updates the address that will receive platform revenue.
     Only the owner or admin can call.
     @param newRecipient address of revenue recipient
@@ -606,32 +648,6 @@ contract YieldOptimizer is
         );
         pool.isDefaultAllocations = isDefault;
         emit UpdatePoolAllocationType(poolAddress, isDefault);
-    }
-
-    /**
-    @dev The function updates the swap router address
-    @param newSwapRouter new swap router adrress
-    */
-    function updateSwapRouter(address newSwapRouter)
-        external
-        onlyAdmin
-        whenNotPaused
-    {
-        swapRouter = newSwapRouter;
-        emit UpdateSwapRouter(newSwapRouter);
-    }
-
-    /**
-    @dev The function updates path to juku
-    @param newPath new swap route for juku
-    */
-    function updatePathToJuku(address[] memory newPath)
-        external
-        onlyAdmin
-        whenNotPaused
-    {
-        pathToJuku = newPath;
-        emit UpdatePathToJuku(newPath);
     }
 
     /**
@@ -819,7 +835,8 @@ contract YieldOptimizer is
         uint256 amount,
         address recipient
     ) external onlyOwner {
-        _withdraw(token, amount, recipient, "");
+        _withdraw(token, amount, recipient);
+        emit EmergencyWithdraw(token, amount, recipient);
     }
 
     //======================================================= Public Functions ========================================================
@@ -851,13 +868,11 @@ contract YieldOptimizer is
     @param token withdraw token address
     @param amount withdraw token amount.
     @param user user wallet address.
-    @param userId user ID in CBI system.
     */
     function _withdraw(
         address token,
         uint256 amount,
-        address user,
-        string memory userId
+        address user
     ) internal {
         if (token == address(0)) {
             _require(address(this).balance >= amount, Errors.NOT_ENOUGH_TOKENS);
@@ -870,8 +885,6 @@ contract YieldOptimizer is
             _require(balanceToken >= amount, Errors.NOT_ENOUGH_TOKENS);
             IERC20Upgradeable(token).safeTransfer(user, amount);
         }
-
-        emit Withdraw(token, amount, user, userId);
     }
 
     /**
