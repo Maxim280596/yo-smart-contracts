@@ -519,7 +519,7 @@ contract YieldOptimizerStaking is
 
         uint256[] memory amounts = IUniswapV2Router(swapRouter)
             .swapExactTokensForTokens(
-                (amount / 2),
+                amount / 2,
                 0,
                 path,
                 address(this),

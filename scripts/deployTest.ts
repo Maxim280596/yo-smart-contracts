@@ -13,23 +13,23 @@ async function main() {
   const YO = await ethers.getContractFactory("YieldOptimizer");
   const YO_STAKING = await ethers.getContractFactory("YieldOptimizerStaking");
 
-  // const yo = await upgrades.deployProxy(
-  //   YO,
-  //   [
-  //     USDC_ADDRESS,
-  //     JUKU,
-  //     ADMIN_ADDRESS,
-  //     VAULT_ADDRESS,
-  //     ROUTER,
-  //     ADMIN_ADDRESS,
-  //     2000,
-  //     3750,
-  //     2500,
-  //     3750,
-  //   ],
-  //   { initializer: "initialize", kind: "uups" }
-  // );
-  // await yo.deployed();
+  const yo = await upgrades.deployProxy(
+    YO,
+    [
+      USDC_ADDRESS,
+      JUKU,
+      ADMIN_ADDRESS,
+      VAULT_ADDRESS,
+      ROUTER,
+      ADMIN_ADDRESS,
+      2000,
+      3750,
+      2500,
+      3750,
+    ],
+    { initializer: "initialize", kind: "uups" }
+  );
+  await yo.deployed();
 
   const yo_staking = await upgrades.deployProxy(
     YO_STAKING,
@@ -49,91 +49,91 @@ async function main() {
   );
   await yo_staking.deployed();
 
-  // console.log(`YO deployed to address:`, yo.address);
+  console.log(`YO deployed to address:`, yo.address);
   console.log(`YO_STAKING deployed to address:`, yo_staking.address);
 
-  // console.log("start adding Pools");
+  console.log("start adding Pools");
 
-  // await yo.addPool(
-  //   "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
-  //   "0xc8871B3D300633Ad5F372d188BF2C77d60F4f3BB",
-  //   USDC_ADDRESS,
-  //   USDC_ADDRESS,
-  //   "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
-  //   "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
-  //   [
-  //     "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
-  //     "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
-  //     "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
-  //     "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
-  //   ],
-  //   0,
-  //   false,
-  //   false
-  // );
+  await yo.addPool(
+    "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
+    "0xc8871B3D300633Ad5F372d188BF2C77d60F4f3BB",
+    USDC_ADDRESS,
+    USDC_ADDRESS,
+    "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
+    "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
+    [
+      "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
+      "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
+      "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
+      "0xc8871b3d300633ad5f372d188bf2c77d60f4f3bb000100000000000000000003",
+    ],
+    0,
+    false,
+    false
+  );
 
-  // await yo.addPool(
-  //   "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
-  //   "0xFfdE33b405f5EB382CCAE7EE2f4FD082A697214f",
-  //   USDC_ADDRESS,
-  //   USDC_ADDRESS,
-  //   "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
-  //   "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
-  //   [
-  //     "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
-  //     "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
-  //     "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
-  //     "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
-  //     "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
-  //   ],
-  //   1,
-  //   false,
-  //   false
-  // );
-  // await yo.addPool(
-  //   "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //   "0x2452A5557d551B129156078ea05cff6B785aF68e",
-  //   USDC_ADDRESS,
-  //   USDC_ADDRESS,
-  //   "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //   "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //   [
-  //     "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //     "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //     "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //     "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //     "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //     "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //     "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //   ],
-  //   3,
-  //   false,
-  //   false
-  // );
+  await yo.addPool(
+    "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
+    "0xFfdE33b405f5EB382CCAE7EE2f4FD082A697214f",
+    USDC_ADDRESS,
+    USDC_ADDRESS,
+    "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
+    "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
+    [
+      "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
+      "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
+      "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
+      "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
+      "0xffde33b405f5eb382ccae7ee2f4fd082a697214f000100000000000000000004",
+    ],
+    1,
+    false,
+    false
+  );
+  await yo.addPool(
+    "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+    "0x2452A5557d551B129156078ea05cff6B785aF68e",
+    USDC_ADDRESS,
+    USDC_ADDRESS,
+    "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+    "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+    [
+      "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+      "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+      "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+      "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+      "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+      "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+      "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+    ],
+    3,
+    false,
+    false
+  );
 
-  // await yo.addPool(
-  //   "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
-  //   "0x9d18356017BE509B4d9D64fD96EAFf7A2F275111",
-  //   "0xdfad4885b3e0e013a8e6a0c83058d5370c7da801",
-  //   "0xdfad4885b3e0e013a8e6a0c83058d5370c7da801",
-  //   "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //   "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
-  //   [
-  //     "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
-  //     "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
-  //     "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
-  //     "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
-  //   ],
-  //   3,
-  //   false,
-  //   false
-  // );
+  await yo.addPool(
+    "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
+    "0x9d18356017BE509B4d9D64fD96EAFf7A2F275111",
+    "0xdfad4885b3e0e013a8e6a0c83058d5370c7da801",
+    "0xdfad4885b3e0e013a8e6a0c83058d5370c7da801",
+    "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+    "0x2452a5557d551b129156078ea05cff6b785af68e000100000000000000000001",
+    [
+      "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
+      "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
+      "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
+      "0x9d18356017be509b4d9d64fd96eaff7a2f275111000100000000000000000000",
+    ],
+    3,
+    false,
+    false
+  );
 
-  // try {
-  //   await verifyContract(yo.address, []);
-  // } catch (err) {
-  //   console.log("YO verify", err);
-  // }
+  try {
+    await verifyContract(yo.address, []);
+  } catch (err) {
+    console.log("YO verify", err);
+  }
 
   try {
     await verifyContract(yo_staking.address, []);
