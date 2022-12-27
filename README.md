@@ -5,7 +5,8 @@
 
 # Docs & Schemes
 
-[Link](https://docs.google.com/document/d/1B6Zi1cxElLT2OqSgQgl0goO1a96IYv7OVIEoznxLmLw/edit?usp=sharing)
+[Documentation&Schemes](https://docs.google.com/document/d/1B6Zi1cxElLT2OqSgQgl0goO1a96IYv7OVIEoznxLmLw/edit?usp=sharing)
+[SchemesMiro](https://miro.com/app/board/uXjVP5eLfY8=/?share_link_id=387612122522)
 
 ## Installation
 
