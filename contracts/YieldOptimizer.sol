@@ -234,10 +234,9 @@ contract YieldOptimizer is
             treasuryPercent: _treasuryPercent,
             commisionsPercent: _commisionsPercent
         });
-
-        IERC20Upgradeable(_usdcToken).approve(_vault, type(uint256).max);
-        IERC20Upgradeable(_usdcToken).approve(_uniRouter, type(uint256).max);
-        IERC20Upgradeable(_jukuToken).approve(_uniRouter, type(uint256).max);
+         _makeApprove(IERC20Upgradeable(_usdcToken), _vault);
+         _makeApprove(IERC20Upgradeable(_usdcToken), _uniRouter);
+         _makeApprove(IERC20Upgradeable(_jukuToken), _uniRouter);
     }
 
     receive() external payable {}
@@ -437,9 +436,9 @@ contract YieldOptimizer is
         ];
         epoch.start = block.timestamp;
         pool.currentEpoch = rewardsEpochCounter[_poolAddress];
-        IERC20Upgradeable(_poolAddress).approve(vault, type(uint256).max);
+         _makeApprove(IERC20Upgradeable(_poolAddress), vault);
         for (uint256 i = 0; i < poolTokens.length; i++) {
-            IERC20Upgradeable(poolTokens[i]).approve(vault, type(uint256).max);
+            _makeApprove(IERC20Upgradeable(poolTokens[i]), vault);
         }
         emit AddPool(
             pool.bptToken,
@@ -1259,6 +1258,19 @@ contract YieldOptimizer is
             totalWithdrawAmount = amount - reinvest;
         }
     }
+
+    /**
+    @dev function performs approve erc20 tokens.
+    @param token erc20 token interface
+    @param spender spender address
+    */
+    function _makeApprove(IERC20Upgradeable token, address spender) internal {
+        uint256 allowance = token.allowance(address(this), spender);
+        if(allowance < type(uint256).max) {
+           token.safeIncreaseAllowance(spender, type(uint256).max - allowance); 
+        }
+    }
+
 
     /**
     @dev 

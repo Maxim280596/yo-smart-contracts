@@ -178,13 +178,10 @@ contract YieldOptimizerStaking is
 
         Epoch storage newEpoch = swapFeesAllocations[epochCounter];
         newEpoch.start = block.timestamp;
-
-        IERC20Upgradeable(_usdcToken).approve(_swapRouter, type(uint256).max);
-        IERC20Upgradeable(_jukuToken).approve(_swapRouter, type(uint256).max);
-        IERC20Upgradeable(_usdcJukuPair).approve(
-            _swapRouter,
-            type(uint256).max
-        );
+        
+        _makeApprove(IERC20Upgradeable(_usdcToken), _swapRouter);
+        _makeApprove(IERC20Upgradeable(_jukuToken), _swapRouter);
+        _makeApprove(IERC20Upgradeable(_usdcJukuPair), _swapRouter);
     }
 
     receive() external payable {}
@@ -620,6 +617,18 @@ contract YieldOptimizerStaking is
             );
             _require(balanceToken >= amount, Errors.NOT_ENOUGH_TOKENS);
             IERC20Upgradeable(token).safeTransfer(user, amount);
+        }
+    }
+
+    /**
+    @dev function performs approve erc20 tokens.
+    @param token erc20 token interface
+    @param spender spender address
+    */
+    function _makeApprove(IERC20Upgradeable token, address spender) internal {
+        uint256 allowance = token.allowance(address(this), spender);
+        if(allowance < type(uint256).max) {
+           token.safeIncreaseAllowance(spender, type(uint256).max - allowance); 
         }
     }
 

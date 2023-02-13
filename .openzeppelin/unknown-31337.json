@@ -37,36 +37,6 @@
       "kind": "uups"
     },
     {
-      "address": "0xC9a43158891282A2B1475592D5719c001986Aaec",
-      "txHash": "0xdd58384c7f73bb50778c1075e2030d43f045d709711a0e0bd77c4c314eeb6752",
-      "kind": "uups"
-    },
-    {
-      "address": "0xAA292E8611aDF267e563f334Ee42320aC96D0463",
-      "txHash": "0xdce1ad6dcc6cfd1db11def9c60901dac6fd85bc9fbdf5d78075ab31b29d804e9",
-      "kind": "uups"
-    },
-    {
-      "address": "0x5c74c94173F05dA1720953407cbb920F3DF9f887",
-      "txHash": "0xcfff197169a2999b7f05a9832ce2d87d99a452deaffd16cce7140859aec38a1d",
-      "kind": "uups"
-    },
-    {
-      "address": "0xefc1aB2475ACb7E60499Efb171D173be19928a05",
-      "txHash": "0xe902e34f30ca0e7db35a8595658ab6ffe58515aa25c9eb6a330493331661833e",
-      "kind": "uups"
-    },
-    {
-      "address": "0x2b5A4e5493d4a54E717057B127cf0C000C876f9B",
-      "txHash": "0x324db537d4569bee51c66b34fb1d75eba35104cdd5461d4a748368ff2c4c8797",
-      "kind": "uups"
-    },
-    {
-      "address": "0x9BcC604D4381C5b0Ad12Ff3Bf32bEdE063416BC7",
-      "txHash": "0x72a408eec44732bbb92cb5a45846060f938f6332a2d909a789f856fddb4936ff",
-      "kind": "uups"
-    },
-    {
       "address": "0x1c85638e118b37167e9298c2268758e058DdfDA0",
       "txHash": "0x18076f42c7c81e871fccb7b684de0696d0f855a59fd9875add8ecf0af500ada1",
       "kind": "uups"
@@ -74,6 +44,36 @@
     {
       "address": "0xe8D2A1E88c91DCd5433208d4152Cc4F399a7e91d",
       "txHash": "0xab147c9fbdaf8875a9bda25580f01872f5ce73fb52ecff2b5d1915e58a83d76a",
+      "kind": "uups"
+    },
+    {
+      "address": "0xC9a43158891282A2B1475592D5719c001986Aaec",
+      "txHash": "0xb74fa8d3aa8d66c3a45dd77f673a4ff4c1d03957a1ed0989238346d572b045bb",
+      "kind": "uups"
+    },
+    {
+      "address": "0xAA292E8611aDF267e563f334Ee42320aC96D0463",
+      "txHash": "0x83f7a531f47503424cf6936b8c0a49915221c21b825ab925e98f32083ab04fdb",
+      "kind": "uups"
+    },
+    {
+      "address": "0x5c74c94173F05dA1720953407cbb920F3DF9f887",
+      "txHash": "0xa436b799e328bcbb568b1198755d7e401c7effcbd12900ce763de7bb1b48c561",
+      "kind": "uups"
+    },
+    {
+      "address": "0xefc1aB2475ACb7E60499Efb171D173be19928a05",
+      "txHash": "0xe7727887730a884361efc71ef28dd3e8218ac99a0966597aae23b385d1e826e6",
+      "kind": "uups"
+    },
+    {
+      "address": "0x2b5A4e5493d4a54E717057B127cf0C000C876f9B",
+      "txHash": "0x219472ed65a5ee61b43524414bb8f73dc0ba7d2d4496c2060a441cffbdcb3c00",
+      "kind": "uups"
+    },
+    {
+      "address": "0x9BcC604D4381C5b0Ad12Ff3Bf32bEdE063416BC7",
+      "txHash": "0xb760bd97d82da2726550907f233a56c6b3f11a851ad084c57972a3b73ae6b86a",
       "kind": "uups"
     }
   ],
@@ -506,9 +506,9 @@
         }
       }
     },
-    "f9d2824fd8a9efce9b2e28b276fc1b5f9a9deedd28a6b6071713242fae5bc8e1": {
-      "address": "0x46b142DD1E924FAb83eCc3c08e4D46E82f005e0E",
-      "txHash": "0x3b093c0d9dd78592fd500c277a5b00f530d27a340cefb2909f3815c1d9821276",
+    "76f6e80a9398c8b4e6063488eb90f0e039990f08cbf23637e6a0d06c4dfd8fe3": {
+      "address": "0x79E8AB29Ff79805025c9462a2f2F12e9A496f81d",
+      "txHash": "0xe816bae0ed00c48a674fe5985a0eb088799b5887d442082d6d0c1f8d8f14e536",
       "layout": {
         "solcVersion": "0.8.17",
         "storage": [
@@ -586,108 +586,100 @@
             "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:116"
           },
           {
-            "label": "funds",
-            "offset": 0,
-            "slot": "251",
-            "type": "t_struct(FundManagement)11383_storage",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:28"
-          },
-          {
             "label": "defaultAllocations",
             "offset": 0,
-            "slot": "253",
-            "type": "t_struct(Allocations)2601_storage",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:29"
+            "slot": "251",
+            "type": "t_struct(Allocations)8612_storage",
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:22"
           },
           {
             "label": "usdcToken",
             "offset": 0,
-            "slot": "257",
+            "slot": "254",
             "type": "t_address",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:67"
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:39"
           },
           {
             "label": "jukuToken",
             "offset": 0,
+            "slot": "255",
+            "type": "t_address",
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:40"
+          },
+          {
+            "label": "usdcJukuPair",
+            "offset": 0,
+            "slot": "256",
+            "type": "t_address",
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:41"
+          },
+          {
+            "label": "swapRouter",
+            "offset": 0,
+            "slot": "257",
+            "type": "t_address",
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:42"
+          },
+          {
+            "label": "yo",
+            "offset": 0,
             "slot": "258",
             "type": "t_address",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:68"
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:43"
           },
           {
             "label": "adminWallet",
             "offset": 0,
             "slot": "259",
             "type": "t_address",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:69"
-          },
-          {
-            "label": "vault",
-            "offset": 0,
-            "slot": "260",
-            "type": "t_address",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:70"
-          },
-          {
-            "label": "swapRouter",
-            "offset": 0,
-            "slot": "261",
-            "type": "t_address",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:71"
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:44"
           },
           {
             "label": "revenueRecipient",
             "offset": 0,
-            "slot": "262",
+            "slot": "260",
             "type": "t_address",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:72"
-          },
-          {
-            "label": "staking",
-            "offset": 0,
-            "slot": "263",
-            "type": "t_address",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:73"
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:45"
           },
           {
             "label": "pathToJuku",
             "offset": 0,
-            "slot": "264",
+            "slot": "261",
             "type": "t_array(t_address)dyn_storage",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:74"
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:46"
           },
           {
-            "label": "poolInfo",
+            "label": "pathToUsdc",
             "offset": 0,
-            "slot": "265",
-            "type": "t_mapping(t_address,t_struct(Pool)2638_storage)",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:75"
+            "slot": "262",
+            "type": "t_array(t_address)dyn_storage",
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:47"
           },
           {
-            "label": "poolRewards",
+            "label": "swapFeesAllocations",
             "offset": 0,
-            "slot": "266",
-            "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(Epoch)2651_storage))",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:76"
+            "slot": "263",
+            "type": "t_mapping(t_uint256,t_struct(Epoch)8623_storage)",
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:48"
           },
           {
-            "label": "rewardsEpochCounter",
+            "label": "epochCounter",
             "offset": 0,
-            "slot": "267",
-            "type": "t_mapping(t_address,t_uint256)",
-            "contract": "YieldOptimizer",
-            "src": "contracts/YieldOptimizer.sol:77"
+            "slot": "264",
+            "type": "t_uint256",
+            "contract": "YieldOptimizerStakingV2",
+            "src": "contracts/test/StakingV2.sol:49"
           }
         ],
         "types": {
@@ -695,16 +687,8 @@
             "label": "address",
             "numberOfBytes": "20"
           },
-          "t_address_payable": {
-            "label": "address payable",
-            "numberOfBytes": "20"
-          },
           "t_array(t_address)dyn_storage": {
             "label": "address[]",
-            "numberOfBytes": "32"
-          },
-          "t_array(t_bytes32)dyn_storage": {
-            "label": "bytes32[]",
             "numberOfBytes": "32"
           },
           "t_array(t_uint256)49_storage": {
@@ -715,36 +699,16 @@
             "label": "uint256[50]",
             "numberOfBytes": "1600"
           },
-          "t_array(t_uint256)dyn_storage": {
-            "label": "uint256[]",
-            "numberOfBytes": "32"
-          },
           "t_bool": {
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_bytes32": {
-            "label": "bytes32",
+          "t_mapping(t_uint256,t_struct(Epoch)8623_storage)": {
+            "label": "mapping(uint256 => struct YieldOptimizerStakingV2.Epoch)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_mapping(t_uint256,t_struct(Epoch)2651_storage))": {
-            "label": "mapping(address => mapping(uint256 => struct YieldOptimizer.Epoch))",
-            "numberOfBytes": "32"
-          },
-          "t_mapping(t_address,t_struct(Pool)2638_storage)": {
-            "label": "mapping(address => struct YieldOptimizer.Pool)",
-            "numberOfBytes": "32"
-          },
-          "t_mapping(t_address,t_uint256)": {
-            "label": "mapping(address => uint256)",
-            "numberOfBytes": "32"
-          },
-          "t_mapping(t_uint256,t_struct(Epoch)2651_storage)": {
-            "label": "mapping(uint256 => struct YieldOptimizer.Epoch)",
-            "numberOfBytes": "32"
-          },
-          "t_struct(Allocations)2601_storage": {
-            "label": "struct YieldOptimizer.Allocations",
+          "t_struct(Allocations)8612_storage": {
+            "label": "struct YieldOptimizerStakingV2.Allocations",
             "members": [
               {
                 "label": "reinvestedPercent",
@@ -753,28 +717,22 @@
                 "slot": "0"
               },
               {
-                "label": "rewardsPercent",
+                "label": "treasuryPercent",
                 "type": "t_uint256",
                 "offset": 0,
                 "slot": "1"
               },
               {
-                "label": "treasuryPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "2"
-              },
-              {
                 "label": "commisionsPercent",
                 "type": "t_uint256",
                 "offset": 0,
-                "slot": "3"
+                "slot": "2"
               }
             ],
-            "numberOfBytes": "128"
+            "numberOfBytes": "96"
           },
-          "t_struct(Epoch)2651_storage": {
-            "label": "struct YieldOptimizer.Epoch",
+          "t_struct(Epoch)8623_storage": {
+            "label": "struct YieldOptimizerStakingV2.Epoch",
             "members": [
               {
                 "label": "commisions",
@@ -783,169 +741,31 @@
                 "slot": "0"
               },
               {
-                "label": "jukuRewards",
+                "label": "reinvestedLPT",
                 "type": "t_uint256",
                 "offset": 0,
                 "slot": "1"
-              },
-              {
-                "label": "reinvestedBpt",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "2"
               },
               {
                 "label": "treasuryRevenue",
                 "type": "t_uint256",
                 "offset": 0,
-                "slot": "3"
+                "slot": "2"
               },
               {
                 "label": "start",
                 "type": "t_uint256",
                 "offset": 0,
-                "slot": "4"
+                "slot": "3"
               },
               {
                 "label": "end",
                 "type": "t_uint256",
                 "offset": 0,
-                "slot": "5"
-              }
-            ],
-            "numberOfBytes": "192"
-          },
-          "t_struct(FundManagement)11383_storage": {
-            "label": "struct IVault.FundManagement",
-            "members": [
-              {
-                "label": "sender",
-                "type": "t_address",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "fromInternalBalance",
-                "type": "t_bool",
-                "offset": 20,
-                "slot": "0"
-              },
-              {
-                "label": "recipient",
-                "type": "t_address_payable",
-                "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "toInternalBalance",
-                "type": "t_bool",
-                "offset": 20,
-                "slot": "1"
-              }
-            ],
-            "numberOfBytes": "64"
-          },
-          "t_struct(Pool)2638_storage": {
-            "label": "struct YieldOptimizer.Pool",
-            "members": [
-              {
-                "label": "bptToken",
-                "type": "t_address",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "depositToken",
-                "type": "t_address",
-                "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "exitToken",
-                "type": "t_address",
-                "offset": 0,
-                "slot": "2"
-              },
-              {
-                "label": "tokens",
-                "type": "t_array(t_address)dyn_storage",
-                "offset": 0,
-                "slot": "3"
-              },
-              {
-                "label": "poolId",
-                "type": "t_bytes32",
-                "offset": 0,
                 "slot": "4"
-              },
-              {
-                "label": "swapRouteForDepositToken",
-                "type": "t_bytes32",
-                "offset": 0,
-                "slot": "5"
-              },
-              {
-                "label": "swapRouteForExitToken",
-                "type": "t_bytes32",
-                "offset": 0,
-                "slot": "6"
-              },
-              {
-                "label": "swapRoutes",
-                "type": "t_array(t_bytes32)dyn_storage",
-                "offset": 0,
-                "slot": "7"
-              },
-              {
-                "label": "tokensWeights",
-                "type": "t_array(t_uint256)dyn_storage",
-                "offset": 0,
-                "slot": "8"
-              },
-              {
-                "label": "exitTokenIndex",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "9"
-              },
-              {
-                "label": "currentEpoch",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "10"
-              },
-              {
-                "label": "isActive",
-                "type": "t_bool",
-                "offset": 0,
-                "slot": "11"
-              },
-              {
-                "label": "isDepositInOneToken",
-                "type": "t_bool",
-                "offset": 1,
-                "slot": "11"
-              },
-              {
-                "label": "isExitInOneToken",
-                "type": "t_bool",
-                "offset": 2,
-                "slot": "11"
-              },
-              {
-                "label": "isDefaultAllocations",
-                "type": "t_bool",
-                "offset": 3,
-                "slot": "11"
-              },
-              {
-                "label": "allocations",
-                "type": "t_struct(Allocations)2601_storage",
-                "offset": 0,
-                "slot": "12"
               }
             ],
-            "numberOfBytes": "512"
+            "numberOfBytes": "160"
           },
           "t_uint256": {
             "label": "uint256",
@@ -958,9 +778,9 @@
         }
       }
     },
-    "297e80bb0e00aa5a651a334881ebba8c7de8b018ad6b11f21041ae5653bb7f93": {
+    "043e683f2794d189173b435a045d1b51834f7d4c92651a26b78bf9d51d756b19": {
       "address": "0xB06c856C8eaBd1d8321b687E188204C1018BC4E5",
-      "txHash": "0x79221a9e00631d02a6762afee6cbf3d36e9c99b7fd60d2c2829a18d24ae48551",
+      "txHash": "0xcab8ff72233cb4f8885f2f513d5261cd80e0a77041884393d66078b37c90029a",
       "layout": {
         "solcVersion": "0.8.17",
         "storage": [
@@ -1041,7 +861,7 @@
             "label": "funds",
             "offset": 0,
             "slot": "251",
-            "type": "t_struct(FundManagement)11383_storage",
+            "type": "t_struct(FundManagement)7979_storage",
             "contract": "YieldOptimizerV2",
             "src": "contracts/test/YOv2.sol:24"
           },
@@ -1049,7 +869,7 @@
             "label": "defaultAllocations",
             "offset": 0,
             "slot": "253",
-            "type": "t_struct(Allocations)14089_storage",
+            "type": "t_struct(Allocations)10135_storage",
             "contract": "YieldOptimizerV2",
             "src": "contracts/test/YOv2.sol:25"
           },
@@ -1121,7 +941,7 @@
             "label": "poolInfo",
             "offset": 0,
             "slot": "265",
-            "type": "t_mapping(t_address,t_struct(Pool)14126_storage)",
+            "type": "t_mapping(t_address,t_struct(Pool)10172_storage)",
             "contract": "YieldOptimizerV2",
             "src": "contracts/test/YOv2.sol:71"
           },
@@ -1129,7 +949,7 @@
             "label": "poolRewards",
             "offset": 0,
             "slot": "266",
-            "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(Epoch)14139_storage))",
+            "type": "t_mapping(t_address,t_mapping(t_uint256,t_struct(Epoch)10185_storage))",
             "contract": "YieldOptimizerV2",
             "src": "contracts/test/YOv2.sol:72"
           },
@@ -1179,11 +999,11 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_mapping(t_uint256,t_struct(Epoch)14139_storage))": {
+          "t_mapping(t_address,t_mapping(t_uint256,t_struct(Epoch)10185_storage))": {
             "label": "mapping(address => mapping(uint256 => struct YieldOptimizerV2.Epoch))",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_address,t_struct(Pool)14126_storage)": {
+          "t_mapping(t_address,t_struct(Pool)10172_storage)": {
             "label": "mapping(address => struct YieldOptimizerV2.Pool)",
             "numberOfBytes": "32"
           },
@@ -1191,11 +1011,11 @@
             "label": "mapping(address => uint256)",
             "numberOfBytes": "32"
           },
-          "t_mapping(t_uint256,t_struct(Epoch)14139_storage)": {
+          "t_mapping(t_uint256,t_struct(Epoch)10185_storage)": {
             "label": "mapping(uint256 => struct YieldOptimizerV2.Epoch)",
             "numberOfBytes": "32"
           },
-          "t_struct(Allocations)14089_storage": {
+          "t_struct(Allocations)10135_storage": {
             "label": "struct YieldOptimizerV2.Allocations",
             "members": [
               {
@@ -1225,7 +1045,7 @@
             ],
             "numberOfBytes": "128"
           },
-          "t_struct(Epoch)14139_storage": {
+          "t_struct(Epoch)10185_storage": {
             "label": "struct YieldOptimizerV2.Epoch",
             "members": [
               {
@@ -1267,7 +1087,7 @@
             ],
             "numberOfBytes": "192"
           },
-          "t_struct(FundManagement)11383_storage": {
+          "t_struct(FundManagement)7979_storage": {
             "label": "struct IVault.FundManagement",
             "members": [
               {
@@ -1297,7 +1117,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Pool)14126_storage": {
+          "t_struct(Pool)10172_storage": {
             "label": "struct YieldOptimizerV2.Pool",
             "members": [
               {
@@ -1392,7 +1212,7 @@
               },
               {
                 "label": "allocations",
-                "type": "t_struct(Allocations)14089_storage",
+                "type": "t_struct(Allocations)10135_storage",
                 "offset": 0,
                 "slot": "12"
               }
@@ -1410,553 +1230,9 @@
         }
       }
     },
-    "89965a2a2c66b030864665e3f133b1f51fe0d183620ee9cc0ff8902bf0d58bd9": {
-      "address": "0x79E8AB29Ff79805025c9462a2f2F12e9A496f81d",
-      "txHash": "0x4d199013036a7f7a85035381a443cba58b720bdca6af446242e4d6b3afba82a7",
-      "layout": {
-        "solcVersion": "0.8.17",
-        "storage": [
-          {
-            "label": "_initialized",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint8",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
-            "retypedFrom": "bool"
-          },
-          {
-            "label": "_initializing",
-            "offset": 1,
-            "slot": "0",
-            "type": "t_bool",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ContextUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
-          },
-          {
-            "label": "_owner",
-            "offset": 0,
-            "slot": "51",
-            "type": "t_address",
-            "contract": "OwnableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "52",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "OwnableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "101",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ERC1967UpgradeUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:211"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "151",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "UUPSUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:107"
-          },
-          {
-            "label": "_paused",
-            "offset": 0,
-            "slot": "201",
-            "type": "t_bool",
-            "contract": "PausableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:29"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "202",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "PausableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:116"
-          },
-          {
-            "label": "defaultAllocations",
-            "offset": 0,
-            "slot": "251",
-            "type": "t_struct(Allocations)12040_storage",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:22"
-          },
-          {
-            "label": "usdcToken",
-            "offset": 0,
-            "slot": "254",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:39"
-          },
-          {
-            "label": "jukuToken",
-            "offset": 0,
-            "slot": "255",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:40"
-          },
-          {
-            "label": "usdcJukuPair",
-            "offset": 0,
-            "slot": "256",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:41"
-          },
-          {
-            "label": "swapRouter",
-            "offset": 0,
-            "slot": "257",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:42"
-          },
-          {
-            "label": "yo",
-            "offset": 0,
-            "slot": "258",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:43"
-          },
-          {
-            "label": "adminWallet",
-            "offset": 0,
-            "slot": "259",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:44"
-          },
-          {
-            "label": "revenueRecipient",
-            "offset": 0,
-            "slot": "260",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:45"
-          },
-          {
-            "label": "pathToJuku",
-            "offset": 0,
-            "slot": "261",
-            "type": "t_array(t_address)dyn_storage",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:46"
-          },
-          {
-            "label": "pathToUsdc",
-            "offset": 0,
-            "slot": "262",
-            "type": "t_array(t_address)dyn_storage",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:47"
-          },
-          {
-            "label": "swapFeesAllocations",
-            "offset": 0,
-            "slot": "263",
-            "type": "t_mapping(t_uint256,t_struct(Epoch)12051_storage)",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:48"
-          },
-          {
-            "label": "epochCounter",
-            "offset": 0,
-            "slot": "264",
-            "type": "t_uint256",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:49"
-          }
-        ],
-        "types": {
-          "t_address": {
-            "label": "address",
-            "numberOfBytes": "20"
-          },
-          "t_array(t_address)dyn_storage": {
-            "label": "address[]",
-            "numberOfBytes": "32"
-          },
-          "t_array(t_uint256)49_storage": {
-            "label": "uint256[49]",
-            "numberOfBytes": "1568"
-          },
-          "t_array(t_uint256)50_storage": {
-            "label": "uint256[50]",
-            "numberOfBytes": "1600"
-          },
-          "t_bool": {
-            "label": "bool",
-            "numberOfBytes": "1"
-          },
-          "t_mapping(t_uint256,t_struct(Epoch)12051_storage)": {
-            "label": "mapping(uint256 => struct YieldOptimizerStakingV2.Epoch)",
-            "numberOfBytes": "32"
-          },
-          "t_struct(Allocations)12040_storage": {
-            "label": "struct YieldOptimizerStakingV2.Allocations",
-            "members": [
-              {
-                "label": "reinvestedPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "treasuryPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "commisionsPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "2"
-              }
-            ],
-            "numberOfBytes": "96"
-          },
-          "t_struct(Epoch)12051_storage": {
-            "label": "struct YieldOptimizerStakingV2.Epoch",
-            "members": [
-              {
-                "label": "commisions",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "reinvestedLPT",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "treasuryRevenue",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "2"
-              },
-              {
-                "label": "start",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "3"
-              },
-              {
-                "label": "end",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "4"
-              }
-            ],
-            "numberOfBytes": "160"
-          },
-          "t_uint256": {
-            "label": "uint256",
-            "numberOfBytes": "32"
-          },
-          "t_uint8": {
-            "label": "uint8",
-            "numberOfBytes": "1"
-          }
-        }
-      }
-    },
-    "475f6a292be4c44c8124bf0643bae29567d75a274a755519942ee3f404e9d673": {
-      "address": "0xaC47e91215fb80462139756f43438402998E4A3a",
-      "txHash": "0x6dfddf41fcdcb4a021777a6d5c3f6cc2ade93936597434b523c48b8206facea8",
-      "layout": {
-        "solcVersion": "0.8.17",
-        "storage": [
-          {
-            "label": "_initialized",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint8",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
-            "retypedFrom": "bool"
-          },
-          {
-            "label": "_initializing",
-            "offset": 1,
-            "slot": "0",
-            "type": "t_bool",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ContextUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
-          },
-          {
-            "label": "_owner",
-            "offset": 0,
-            "slot": "51",
-            "type": "t_address",
-            "contract": "OwnableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "52",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "OwnableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "101",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ERC1967UpgradeUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:211"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "151",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "UUPSUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:107"
-          },
-          {
-            "label": "_paused",
-            "offset": 0,
-            "slot": "201",
-            "type": "t_bool",
-            "contract": "PausableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:29"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "202",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "PausableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:116"
-          },
-          {
-            "label": "defaultAllocations",
-            "offset": 0,
-            "slot": "251",
-            "type": "t_struct(Allocations)1778_storage",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:26"
-          },
-          {
-            "label": "usdcToken",
-            "offset": 0,
-            "slot": "254",
-            "type": "t_address",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:43"
-          },
-          {
-            "label": "jukuToken",
-            "offset": 0,
-            "slot": "255",
-            "type": "t_address",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:44"
-          },
-          {
-            "label": "usdcJukuPair",
-            "offset": 0,
-            "slot": "256",
-            "type": "t_address",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:45"
-          },
-          {
-            "label": "swapRouter",
-            "offset": 0,
-            "slot": "257",
-            "type": "t_address",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:46"
-          },
-          {
-            "label": "yo",
-            "offset": 0,
-            "slot": "258",
-            "type": "t_address",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:47"
-          },
-          {
-            "label": "adminWallet",
-            "offset": 0,
-            "slot": "259",
-            "type": "t_address",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:48"
-          },
-          {
-            "label": "revenueRecipient",
-            "offset": 0,
-            "slot": "260",
-            "type": "t_address",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:49"
-          },
-          {
-            "label": "pathToJuku",
-            "offset": 0,
-            "slot": "261",
-            "type": "t_array(t_address)dyn_storage",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:50"
-          },
-          {
-            "label": "pathToUsdc",
-            "offset": 0,
-            "slot": "262",
-            "type": "t_array(t_address)dyn_storage",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:51"
-          },
-          {
-            "label": "swapFeesAllocations",
-            "offset": 0,
-            "slot": "263",
-            "type": "t_mapping(t_uint256,t_struct(Epoch)1789_storage)",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:52"
-          },
-          {
-            "label": "epochCounter",
-            "offset": 0,
-            "slot": "264",
-            "type": "t_uint256",
-            "contract": "YieldOptimizerStaking",
-            "src": "contracts/YieldOptimizerStaking.sol:53"
-          }
-        ],
-        "types": {
-          "t_address": {
-            "label": "address",
-            "numberOfBytes": "20"
-          },
-          "t_array(t_address)dyn_storage": {
-            "label": "address[]",
-            "numberOfBytes": "32"
-          },
-          "t_array(t_uint256)49_storage": {
-            "label": "uint256[49]",
-            "numberOfBytes": "1568"
-          },
-          "t_array(t_uint256)50_storage": {
-            "label": "uint256[50]",
-            "numberOfBytes": "1600"
-          },
-          "t_bool": {
-            "label": "bool",
-            "numberOfBytes": "1"
-          },
-          "t_mapping(t_uint256,t_struct(Epoch)1789_storage)": {
-            "label": "mapping(uint256 => struct YieldOptimizerStaking.Epoch)",
-            "numberOfBytes": "32"
-          },
-          "t_struct(Allocations)1778_storage": {
-            "label": "struct YieldOptimizerStaking.Allocations",
-            "members": [
-              {
-                "label": "reinvestedPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "treasuryPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "commisionsPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "2"
-              }
-            ],
-            "numberOfBytes": "96"
-          },
-          "t_struct(Epoch)1789_storage": {
-            "label": "struct YieldOptimizerStaking.Epoch",
-            "members": [
-              {
-                "label": "commisions",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "reinvestedLPT",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "treasuryRevenue",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "2"
-              },
-              {
-                "label": "start",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "3"
-              },
-              {
-                "label": "end",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "4"
-              }
-            ],
-            "numberOfBytes": "160"
-          },
-          "t_uint256": {
-            "label": "uint256",
-            "numberOfBytes": "32"
-          },
-          "t_uint8": {
-            "label": "uint8",
-            "numberOfBytes": "1"
-          }
-        }
-      }
-    },
-    "975692d6b4aae7dd55f3d3904c02752e4e2ad452965f41199c85ceac0b92d3f4": {
-      "address": "0xC9a43158891282A2B1475592D5719c001986Aaec",
-      "txHash": "0xd4208013f08ea5a5b54a42b06db61770b0c73c32e22b706a545b75472e35000f",
+    "2a7c58931e955d3e7ecc00baf559bd286827b330f25e8dce02105045d3c35dcb": {
+      "address": "0x46b142DD1E924FAb83eCc3c08e4D46E82f005e0E",
+      "txHash": "0x0efca83f27c63aca777fd5e7fd6cf04e950faacd07b1c1d8cdd75d4dd79c4c7b",
       "layout": {
         "solcVersion": "0.8.17",
         "storage": [
@@ -2037,7 +1313,7 @@
             "label": "funds",
             "offset": 0,
             "slot": "251",
-            "type": "t_struct(FundManagement)7933_storage",
+            "type": "t_struct(FundManagement)7979_storage",
             "contract": "YieldOptimizer",
             "src": "contracts/YieldOptimizer.sol:24"
           },
@@ -2263,7 +1539,7 @@
             ],
             "numberOfBytes": "192"
           },
-          "t_struct(FundManagement)7933_storage": {
+          "t_struct(FundManagement)7979_storage": {
             "label": "struct IVault.FundManagement",
             "members": [
               {
@@ -2406,9 +1682,9 @@
         }
       }
     },
-    "76f6e80a9398c8b4e6063488eb90f0e039990f08cbf23637e6a0d06c4dfd8fe3": {
-      "address": "0x70bDA08DBe07363968e9EE53d899dFE48560605B",
-      "txHash": "0x9c255eb9c9ed8e7b3dd60e78c9cbb01da04829202d7a549d2e5bb1618e921038",
+    "754d0d03cc87e0b221fc5ff642cedf30cf9b5ae459889c20e542a362d02053cf": {
+      "address": "0xaC47e91215fb80462139756f43438402998E4A3a",
+      "txHash": "0xe0a0a000261f63f7148707eb6c62ade9805e4c34c0593fcedc432ab6b9ca1075",
       "layout": {
         "solcVersion": "0.8.17",
         "storage": [
@@ -2489,279 +1765,7 @@
             "label": "defaultAllocations",
             "offset": 0,
             "slot": "251",
-            "type": "t_struct(Allocations)8566_storage",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:22"
-          },
-          {
-            "label": "usdcToken",
-            "offset": 0,
-            "slot": "254",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:39"
-          },
-          {
-            "label": "jukuToken",
-            "offset": 0,
-            "slot": "255",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:40"
-          },
-          {
-            "label": "usdcJukuPair",
-            "offset": 0,
-            "slot": "256",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:41"
-          },
-          {
-            "label": "swapRouter",
-            "offset": 0,
-            "slot": "257",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:42"
-          },
-          {
-            "label": "yo",
-            "offset": 0,
-            "slot": "258",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:43"
-          },
-          {
-            "label": "adminWallet",
-            "offset": 0,
-            "slot": "259",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:44"
-          },
-          {
-            "label": "revenueRecipient",
-            "offset": 0,
-            "slot": "260",
-            "type": "t_address",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:45"
-          },
-          {
-            "label": "pathToJuku",
-            "offset": 0,
-            "slot": "261",
-            "type": "t_array(t_address)dyn_storage",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:46"
-          },
-          {
-            "label": "pathToUsdc",
-            "offset": 0,
-            "slot": "262",
-            "type": "t_array(t_address)dyn_storage",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:47"
-          },
-          {
-            "label": "swapFeesAllocations",
-            "offset": 0,
-            "slot": "263",
-            "type": "t_mapping(t_uint256,t_struct(Epoch)8577_storage)",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:48"
-          },
-          {
-            "label": "epochCounter",
-            "offset": 0,
-            "slot": "264",
-            "type": "t_uint256",
-            "contract": "YieldOptimizerStakingV2",
-            "src": "contracts/test/StakingV2.sol:49"
-          }
-        ],
-        "types": {
-          "t_address": {
-            "label": "address",
-            "numberOfBytes": "20"
-          },
-          "t_array(t_address)dyn_storage": {
-            "label": "address[]",
-            "numberOfBytes": "32"
-          },
-          "t_array(t_uint256)49_storage": {
-            "label": "uint256[49]",
-            "numberOfBytes": "1568"
-          },
-          "t_array(t_uint256)50_storage": {
-            "label": "uint256[50]",
-            "numberOfBytes": "1600"
-          },
-          "t_bool": {
-            "label": "bool",
-            "numberOfBytes": "1"
-          },
-          "t_mapping(t_uint256,t_struct(Epoch)8577_storage)": {
-            "label": "mapping(uint256 => struct YieldOptimizerStakingV2.Epoch)",
-            "numberOfBytes": "32"
-          },
-          "t_struct(Allocations)8566_storage": {
-            "label": "struct YieldOptimizerStakingV2.Allocations",
-            "members": [
-              {
-                "label": "reinvestedPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "treasuryPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "commisionsPercent",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "2"
-              }
-            ],
-            "numberOfBytes": "96"
-          },
-          "t_struct(Epoch)8577_storage": {
-            "label": "struct YieldOptimizerStakingV2.Epoch",
-            "members": [
-              {
-                "label": "commisions",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "0"
-              },
-              {
-                "label": "reinvestedLPT",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "1"
-              },
-              {
-                "label": "treasuryRevenue",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "2"
-              },
-              {
-                "label": "start",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "3"
-              },
-              {
-                "label": "end",
-                "type": "t_uint256",
-                "offset": 0,
-                "slot": "4"
-              }
-            ],
-            "numberOfBytes": "160"
-          },
-          "t_uint256": {
-            "label": "uint256",
-            "numberOfBytes": "32"
-          },
-          "t_uint8": {
-            "label": "uint8",
-            "numberOfBytes": "1"
-          }
-        }
-      }
-    },
-    "681eea61edc56c6a0061f741c1b577d610bba85dea6e7ff26a905dd74efb28f3": {
-      "address": "0x720472c8ce72c2A2D711333e064ABD3E6BbEAdd3",
-      "txHash": "0x126a5a4330c7440a40391db91dfa20c546441b454093d41fa63a0d3b3f5f3fe2",
-      "layout": {
-        "solcVersion": "0.8.17",
-        "storage": [
-          {
-            "label": "_initialized",
-            "offset": 0,
-            "slot": "0",
-            "type": "t_uint8",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
-            "retypedFrom": "bool"
-          },
-          {
-            "label": "_initializing",
-            "offset": 1,
-            "slot": "0",
-            "type": "t_bool",
-            "contract": "Initializable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "1",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ContextUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
-          },
-          {
-            "label": "_owner",
-            "offset": 0,
-            "slot": "51",
-            "type": "t_address",
-            "contract": "OwnableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "52",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "OwnableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "101",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "ERC1967UpgradeUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/ERC1967/ERC1967UpgradeUpgradeable.sol:211"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "151",
-            "type": "t_array(t_uint256)50_storage",
-            "contract": "UUPSUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol:107"
-          },
-          {
-            "label": "_paused",
-            "offset": 0,
-            "slot": "201",
-            "type": "t_bool",
-            "contract": "PausableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:29"
-          },
-          {
-            "label": "__gap",
-            "offset": 0,
-            "slot": "202",
-            "type": "t_array(t_uint256)49_storage",
-            "contract": "PausableUpgradeable",
-            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:116"
-          },
-          {
-            "label": "defaultAllocations",
-            "offset": 0,
-            "slot": "251",
-            "type": "t_struct(Allocations)5721_storage",
+            "type": "t_struct(Allocations)5739_storage",
             "contract": "YieldOptimizerStaking",
             "src": "contracts/YieldOptimizerStaking.sol:22"
           },
@@ -2841,7 +1845,7 @@
             "label": "swapFeesAllocations",
             "offset": 0,
             "slot": "263",
-            "type": "t_mapping(t_uint256,t_struct(Epoch)5732_storage)",
+            "type": "t_mapping(t_uint256,t_struct(Epoch)5750_storage)",
             "contract": "YieldOptimizerStaking",
             "src": "contracts/YieldOptimizerStaking.sol:48"
           },
@@ -2875,11 +1879,11 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_mapping(t_uint256,t_struct(Epoch)5732_storage)": {
+          "t_mapping(t_uint256,t_struct(Epoch)5750_storage)": {
             "label": "mapping(uint256 => struct YieldOptimizerStaking.Epoch)",
             "numberOfBytes": "32"
           },
-          "t_struct(Allocations)5721_storage": {
+          "t_struct(Allocations)5739_storage": {
             "label": "struct YieldOptimizerStaking.Allocations",
             "members": [
               {
@@ -2903,7 +1907,7 @@
             ],
             "numberOfBytes": "96"
           },
-          "t_struct(Epoch)5732_storage": {
+          "t_struct(Epoch)5750_storage": {
             "label": "struct YieldOptimizerStaking.Epoch",
             "members": [
               {
